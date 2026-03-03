@@ -14,7 +14,6 @@ public class CreatePatientRequest {
     @Email
     private String email;
 
-    @NotBlank
     private String keycloakId;
 
     @NotBlank @Size(max = 100)
@@ -50,11 +49,11 @@ public class CreatePatientRequest {
         this.email = email;
     }
 
-    public @NotBlank String getKeycloakId() {
+    public String getKeycloakId() {
         return keycloakId;
     }
 
-    public void setKeycloakId(@NotBlank String keycloakId) {
+    public void setKeycloakId( String keycloakId) {
         this.keycloakId = keycloakId;
     }
 

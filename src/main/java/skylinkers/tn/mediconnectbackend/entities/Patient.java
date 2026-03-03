@@ -31,7 +31,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class Patient extends AppUser {
 
-    @Column(name = "date_of_birth", nullable = false)
+    @Column(name = "date_of_birth", nullable = true)
     private LocalDate dateOfBirth;
 
     @Enumerated(EnumType.STRING)

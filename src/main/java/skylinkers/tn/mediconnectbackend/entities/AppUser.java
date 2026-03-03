@@ -53,8 +53,8 @@ public abstract class AppUser {
      * Spring domain objects and the Keycloak IAM realm.
      * Never expose this in public-facing responses.
      */
-    @Column(name = "keycloak_id", unique = true, nullable = false, length = 36)
-    private String keycloakId;
+    @Column(name = "keycloak_id", unique = true, nullable = false, length = 70)
+    private String keycloakId = "TEMP";
 
     @Column(unique = true, nullable = false, length = 255)
     private String email;
