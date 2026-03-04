@@ -69,27 +69,15 @@ public class AppUserController {
         return ResponseEntity.ok(searchService.search(criteria, pageable));
     }
 
-    /**
-     * GET /api/v1/users/me
-     *
-     * Returns the caller's own profile resolved from the JWT subject (Keycloak UUID).
-     * While Keycloak is disabled, jwt will be null — returns 401 stub.
-     */
     @GetMapping("/me")
     public ResponseEntity<AppUserResponse> getMe(@AuthenticationPrincipal Jwt jwt) {
         if (jwt == null) {
-            // DEV MODE: Keycloak disabled — no JWT principal injected
             return ResponseEntity.status(401).build();
         }
         return ResponseEntity.ok(searchService.getByKeycloakId(jwt.getSubject()));
     }
 
-    /**
-     * GET /api/v1/users/{id}
-     *
-     * Fetch any user by internal DB id. Intended for admin use.
-     * Returns lightweight projection — not the full subtype response.
-     */
+
     @GetMapping("/{id}")
     public ResponseEntity<AppUserResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(searchService.getById(id));
