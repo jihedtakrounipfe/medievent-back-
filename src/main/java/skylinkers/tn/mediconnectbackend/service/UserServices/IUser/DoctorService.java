@@ -23,6 +23,16 @@ public interface DoctorService {
     /** Admin: approve or reject RPPS verification. */
     DoctorResponse updateVerificationStatus(Long id, VerificationStatus status);
 
+    DoctorResponse setVerificationStatus(Long id, VerificationStatus status, String reason);
+
+    DoctorResponse approveDoctor(Long id);
+
+    DoctorResponse rejectDoctor(Long id, String reason);
+
+    DoctorResponse suspendDoctor(Long id, String reason);
+
+    List<DoctorResponse> getDoctorsForAdmin(VerificationStatus status);
+
     Page<DoctorResponse> getDoctorsBySpecialization(Specialization specialization, Pageable pageable);
 
     List<DoctorResponse> getPendingVerification();
@@ -30,5 +40,9 @@ public interface DoctorService {
     List<DoctorResponse> getDoctorsByClinic(Long clinicId);
 
     void deactivateDoctor(Long id);
+
+    void activateDoctor(Long id);
+
+    Page<DoctorResponse> getAllDoctors(Pageable pageable);
 }
 

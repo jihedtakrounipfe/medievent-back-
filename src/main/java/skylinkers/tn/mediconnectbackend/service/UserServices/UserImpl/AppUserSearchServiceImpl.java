@@ -1,4 +1,4 @@
-package skylinkers.tn.mediconnectbackend.service.UserServices;
+package skylinkers.tn.mediconnectbackend.service.UserServices.UserImpl;
 
 import skylinkers.tn.mediconnectbackend.dto.request.UserSearchCriteria;
 import skylinkers.tn.mediconnectbackend.dto.response.AppUserResponse;
@@ -102,9 +102,7 @@ public class AppUserSearchServiceImpl implements IAppUserSearchService {
             }
 
             if (c.getIsVerified() != null && Boolean.TRUE.equals(c.getIsVerified())) {
-                predicates.add(cb.equal(
-                        root.get("verificationStatus").as(String.class), "APPROVED"
-                ));
+                predicates.add(cb.equal(root.get("isVerified"), true));
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));
@@ -124,6 +122,7 @@ public class AppUserSearchServiceImpl implements IAppUserSearchService {
                 .phone(user.getPhone())
                 .userType(user.getUserType())
                 .isActive(user.isActive())
+                .isVerified(user.getIsVerified())
                 .profilePicture(user.getProfilePicture())
                 .createdAt(user.getCreatedAt());
 
@@ -132,9 +131,7 @@ public class AppUserSearchServiceImpl implements IAppUserSearchService {
             builder.specialization(doctor.getSpecialization() != null
                             ? doctor.getSpecialization().name() : null)
                     .officeAddress(doctor.getOfficeAddress())
-                    .isVerified("APPROVED".equals(
-                            doctor.getVerificationStatus() != null
-                                    ? doctor.getVerificationStatus().name() : ""));
+                    .verificationStatus(doctor.getVerificationStatus() != null ? doctor.getVerificationStatus().name() : null);
         }
 
         if (user instanceof Patient patient) {

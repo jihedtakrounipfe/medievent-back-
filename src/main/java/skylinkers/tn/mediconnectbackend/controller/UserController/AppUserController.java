@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
@@ -46,6 +47,7 @@ public class AppUserController {
      *   /users/search?name=benali&isActive=true&page=0&size=10
      */
     @GetMapping("/search")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<Page<AppUserResponse>> search(
             @RequestParam(required = false) String         name,
             @RequestParam(required = false) String         email,
@@ -79,6 +81,7 @@ public class AppUserController {
 
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<AppUserResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(searchService.getById(id));
     }

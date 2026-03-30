@@ -84,6 +84,16 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     @Transactional
+    public void activatePatient(Long id) {
+        Patient patient = findPatientOrThrow(id);
+        patient.setActive(true);
+        patientRepository.save(patient);
+        auditLogService.log(patient, "ACCOUNT_ACTIVATED", null, null, true, null);
+        log.info("Patient activated: id={}", id);
+    }
+
+    @Override
+    @Transactional
     public void erasePatientData(Long id) {
         Patient patient = findPatientOrThrow(id);
         // Anonymise personal fields — keeps the row for referential integrity

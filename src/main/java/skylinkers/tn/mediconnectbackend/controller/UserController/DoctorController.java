@@ -1,6 +1,8 @@
 package skylinkers.tn.mediconnectbackend.controller.UserController;
 
 import skylinkers.tn.mediconnectbackend.dto.request.CreateDoctorRequest;
+import skylinkers.tn.mediconnectbackend.dto.request.DoctorProfileUpdateRequest;
+import skylinkers.tn.mediconnectbackend.dto.request.DoctorStatusReasonRequest;
 import skylinkers.tn.mediconnectbackend.dto.request.UpdateProfileRequest;
 import skylinkers.tn.mediconnectbackend.dto.response.DoctorResponse;
 import skylinkers.tn.mediconnectbackend.entities.enums.Specialization;
@@ -17,11 +19,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/doctors")
+@RequestMapping({"/api/v1/doctors", "/api/doctors"})
 @RequiredArgsConstructor
 public class DoctorController {
 
@@ -52,9 +55,36 @@ public class DoctorController {
         return ResponseEntity.ok(doctorService.updateProfile(profile.getId(), request));
     }
 
+    @PutMapping("/{id}/profile")
+    @PreAuthorize("hasAnyRole('DOCTOR_GP', 'DOCTOR_SPECIALIST')")
+    public ResponseEntity<DoctorResponse> updateMyProfileById(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long id,
+            @Valid @RequestBody DoctorProfileUpdateRequest request
+    ) {
+        DoctorResponse me = doctorService.getDoctorByKeycloakId(jwt.getSubject());
+        if (!me.getId().equals(id)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès refusé");
+        }
+        UpdateProfileRequest payload = new UpdateProfileRequest();
+        payload.setFirstName(request.getFirstName());
+        payload.setLastName(request.getLastName());
+        payload.setPhone(request.getPhone());
+        payload.setAddress(request.getAddress());
+        payload.setProfilePicture(request.getProfilePicture());
+        payload.setEmergencyContactName(request.getEmergencyContactName());
+        payload.setEmergencyContactPhone(request.getEmergencyContactPhone());
+        payload.setSpecialization(request.getSpecialization());
+        payload.setLicenseNumber(request.getLicenseNumber());
+        payload.setConsultationDuration(request.getConsultationDuration());
+        payload.setConsultationFee(request.getConsultationFee());
+        payload.setOfficeAddress(request.getOfficeAddress());
+        return ResponseEntity.ok(doctorService.updateProfile(id, payload));
+    }
+
     // ── Public discovery (patients searching for doctors) ───────────────────
 
-    @GetMapping
+    @GetMapping(params = "specialization")
     public ResponseEntity<Page<DoctorResponse>> getDoctorsBySpecialization(
             @RequestParam Specialization specialization,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -69,13 +99,57 @@ public class DoctorController {
     // ── Admin endpoints ──────────────────────────────────────────────────────
 
     @GetMapping("/pending-verification")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<List<DoctorResponse>> getPendingVerification() {
         return ResponseEntity.ok(doctorService.getPendingVerification());
     }
 
+    @GetMapping("/pending")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    public ResponseEntity<List<DoctorResponse>> getPending() {
+        return ResponseEntity.ok(doctorService.getPendingVerification());
+    }
+
+    @GetMapping(params = {"!specialization"})
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    public ResponseEntity<List<DoctorResponse>> getAllDoctorsForAdmin(
+            @RequestParam(required = false) VerificationStatus status
+    ) {
+        return ResponseEntity.ok(doctorService.getDoctorsForAdmin(status));
+    }
+
+    @PutMapping("/{id}/approve")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    public ResponseEntity<DoctorResponse> approve(@PathVariable Long id) {
+        return ResponseEntity.ok(doctorService.approveDoctor(id));
+    }
+
+    @PutMapping("/{id}/reject")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    public ResponseEntity<DoctorResponse> reject(
+            @PathVariable Long id,
+            @Valid @RequestBody DoctorStatusReasonRequest request
+    ) {
+        return ResponseEntity.ok(doctorService.rejectDoctor(id, request.getReason()));
+    }
+
+    @PutMapping("/{id}/suspend")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    public ResponseEntity<DoctorResponse> suspend(
+            @PathVariable Long id,
+            @Valid @RequestBody DoctorStatusReasonRequest request
+    ) {
+        return ResponseEntity.ok(doctorService.suspendDoctor(id, request.getReason()));
+    }
+
+    @PutMapping("/{id}/reactivate")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    public ResponseEntity<DoctorResponse> reactivate(@PathVariable Long id) {
+        return ResponseEntity.ok(doctorService.approveDoctor(id));
+    }
+
     @PatchMapping("/{id}/verification")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<DoctorResponse> updateVerification(
             @PathVariable Long id,
             @RequestParam VerificationStatus status) {
@@ -83,10 +157,23 @@ public class DoctorController {
     }
 
     @PatchMapping("/{id}/deactivate")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<Void> deactivateDoctor(@PathVariable Long id) {
         doctorService.deactivateDoctor(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/activate")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    public ResponseEntity<Void> activateDoctor(@PathVariable Long id) {
+        doctorService.activateDoctor(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    public ResponseEntity<Page<DoctorResponse>> getAllDoctors(@PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(doctorService.getAllDoctors(pageable));
     }
 
     @GetMapping("/clinic/{clinicId}")

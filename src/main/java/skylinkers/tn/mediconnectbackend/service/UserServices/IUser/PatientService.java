@@ -24,6 +24,8 @@ public interface PatientService {
 
     void deactivatePatient(Long id);
 
+    void activatePatient(Long id);
+
     /** RGPD right-to-erasure: anonymises personal fields & audit logs. */
     void erasePatientData(Long id);
 

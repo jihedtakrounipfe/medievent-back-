@@ -12,6 +12,7 @@ import skylinkers.tn.mediconnectbackend.mapper.DoctorMapper;
 import skylinkers.tn.mediconnectbackend.repository.UserRepositories.DoctorRepository;
 import skylinkers.tn.mediconnectbackend.service.UserServices.IUser.AuditLogService;
 import skylinkers.tn.mediconnectbackend.service.UserServices.IUser.DoctorService;
+import skylinkers.tn.mediconnectbackend.utils.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +32,7 @@ public class DoctorServiceImpl implements DoctorService {
     private final DoctorRepository doctorRepository;
     private final AuditLogService  auditLogService;
     private final DoctorMapper     doctorMapper;
+    private final EmailService     emailService;
 
     @Override
     @Transactional
@@ -70,14 +73,54 @@ public class DoctorServiceImpl implements DoctorService {
     @Override
     @Transactional
     public DoctorResponse updateVerificationStatus(Long id, VerificationStatus status) {
+        return setVerificationStatus(id, status, null);
+    }
+
+    @Override
+    @Transactional
+    public DoctorResponse setVerificationStatus(Long id, VerificationStatus status, String reason) {
         Doctor doctor = findDoctorOrThrow(id);
-        boolean approved = status == VerificationStatus.APPROVED;
-        doctorRepository.updateVerificationStatus(id, status, approved);
+        VerificationStatus oldStatus = doctor.getVerificationStatus();
+
+        if (Objects.equals(oldStatus, status)) {
+            return doctorMapper.toResponse(doctor);
+        }
+
         doctor.setVerificationStatus(status);
-        doctor.setVerified(approved);
-        auditLogService.log(doctor, "DOCTOR_VERIFICATION_" + status.name(), null, null, true, null);
-        log.info("Doctor verification updated: id={}, status={}", id, status);
-        return doctorMapper.toResponse(doctor);
+        Doctor saved = doctorRepository.save(doctor);
+        auditLogService.log(saved, "DOCTOR_VERIFICATION_" + status.name(), null, null, true, reason);
+        log.info("Doctor verification updated: id={}, oldStatus={}, newStatus={}", id, oldStatus, status);
+
+        String doctorName = (saved.getFirstName() + " " + saved.getLastName()).trim();
+        sendDoctorStatusEmail(saved.getEmail(), doctorName, oldStatus, status, reason);
+
+        return doctorMapper.toResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public DoctorResponse approveDoctor(Long id) {
+        return setVerificationStatus(id, VerificationStatus.APPROVED, null);
+    }
+
+    @Override
+    @Transactional
+    public DoctorResponse rejectDoctor(Long id, String reason) {
+        return setVerificationStatus(id, VerificationStatus.REJECTED, reason);
+    }
+
+    @Override
+    @Transactional
+    public DoctorResponse suspendDoctor(Long id, String reason) {
+        return setVerificationStatus(id, VerificationStatus.SUSPENDED, reason);
+    }
+
+    @Override
+    public List<DoctorResponse> getDoctorsForAdmin(VerificationStatus status) {
+        if (status == null) {
+            return doctorRepository.findAll().stream().map(doctorMapper::toResponse).toList();
+        }
+        return doctorRepository.findByVerificationStatus(status).stream().map(doctorMapper::toResponse).toList();
     }
 
     @Override
@@ -109,8 +152,40 @@ public class DoctorServiceImpl implements DoctorService {
         auditLogService.log(doctor, "ACCOUNT_DEACTIVATED", null, null, true, null);
     }
 
+    @Override
+    @Transactional
+    public void activateDoctor(Long id) {
+        Doctor doctor = findDoctorOrThrow(id);
+        doctor.setActive(true);
+        doctorRepository.save(doctor);
+        auditLogService.log(doctor, "ACCOUNT_ACTIVATED", null, null, true, null);
+    }
+
+    @Override
+    public Page<DoctorResponse> getAllDoctors(Pageable pageable) {
+        return doctorRepository.findAll(pageable).map(doctorMapper::toResponse);
+    }
+
     private Doctor findDoctorOrThrow(Long id) {
         return doctorRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor not found: " + id));
+    }
+
+    private void sendDoctorStatusEmail(String to, String doctorName, VerificationStatus oldStatus, VerificationStatus newStatus, String reason) {
+        if (newStatus == VerificationStatus.APPROVED) {
+            emailService.sendDoctorApprovedEmail(to, doctorName);
+            return;
+        }
+        if (oldStatus == VerificationStatus.PENDING && newStatus == VerificationStatus.REJECTED) {
+            emailService.sendDoctorRejectedEmail(to, doctorName, reason == null ? "" : reason);
+            return;
+        }
+        emailService.sendDoctorStatusChangeEmail(
+                to,
+                doctorName,
+                oldStatus == null ? "" : oldStatus.name(),
+                newStatus == null ? "" : newStatus.name(),
+                reason
+        );
     }
 }
