@@ -35,8 +35,8 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
     List<Doctor> findByClinicId(Long clinicId);
 
     @Modifying
-    @Query("UPDATE Doctor d SET d.verificationStatus = :status, d.isVerified = :verified WHERE d.id = :id")
-    void updateVerificationStatus(Long id, VerificationStatus status, boolean verified);
+    @Query("UPDATE Doctor d SET d.verificationStatus = :status WHERE d.id = :id")
+    void updateVerificationStatus(Long id, VerificationStatus status);
 
     @Query("SELECT COUNT(d) FROM Doctor d WHERE d.verificationStatus = 'PENDING'")
     long countPendingVerification();

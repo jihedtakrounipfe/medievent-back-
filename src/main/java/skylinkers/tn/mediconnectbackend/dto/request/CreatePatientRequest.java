@@ -1,5 +1,6 @@
 package skylinkers.tn.mediconnectbackend.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import skylinkers.tn.mediconnectbackend.entities.enums.Gender;
 import jakarta.validation.constraints.*;
 import lombok.Data;
@@ -13,6 +14,11 @@ public class CreatePatientRequest {
     @NotBlank
     @Email
     private String email;
+
+    @NotBlank
+    @Size(min = 8, max = 100)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String password;
 
     private String keycloakId;
 
@@ -28,18 +34,26 @@ public class CreatePatientRequest {
 
     private Gender gender;
 
-    @Pattern(regexp = "^[12][0-9]{14}$", message = "Invalid French social security number")
-    private String socialSecurityNum;
-
-    @Pattern(regexp = "^(A|B|AB|O)[+-]$", message = "Invalid blood type")
+    @Pattern(regexp = "^(A|B|AB|O)[+-]$", message = "Groupe sanguin invalide")
     private String bloodType;
 
     @Size(max = 20)
+    @Pattern(regexp = "^\\+216\\d{8}$", message = "Numéro de téléphone invalide. Format attendu: +216XXXXXXXX")
     private String phone;
 
     private String address;
 
-    private String emergencyContact;
+    private String allergies;
+
+    @Size(max = 100)
+    private String emergencyContactName;
+
+    @Size(max = 20)
+    @Pattern(regexp = "^\\+216\\d{8}$", message = "Téléphone du contact d'urgence invalide. Format attendu: +216XXXXXXXX")
+    private String emergencyContactPhone;
+
+    @Size(max = 500)
+    private String profilePicture;
 
     public @NotBlank @Email String getEmail() {
         return email;
@@ -47,6 +61,14 @@ public class CreatePatientRequest {
 
     public void setEmail(@NotBlank @Email String email) {
         this.email = email;
+    }
+
+    public @NotBlank @Size(min = 8, max = 100) String getPassword() {
+        return password;
+    }
+
+    public void setPassword(@NotBlank @Size(min = 8, max = 100) String password) {
+        this.password = password;
     }
 
     public String getKeycloakId() {
@@ -89,19 +111,11 @@ public class CreatePatientRequest {
         this.gender = gender;
     }
 
-    public @Pattern(regexp = "^[12][0-9]{14}$", message = "Invalid French social security number") String getSocialSecurityNum() {
-        return socialSecurityNum;
-    }
-
-    public void setSocialSecurityNum(@Pattern(regexp = "^[12][0-9]{14}$", message = "Invalid French social security number") String socialSecurityNum) {
-        this.socialSecurityNum = socialSecurityNum;
-    }
-
-    public @Pattern(regexp = "^(A|B|AB|O)[+-]$", message = "Invalid blood type") String getBloodType() {
+    public @Pattern(regexp = "^(A|B|AB|O)[+-]$", message = "Groupe sanguin invalide") String getBloodType() {
         return bloodType;
     }
 
-    public void setBloodType(@Pattern(regexp = "^(A|B|AB|O)[+-]$", message = "Invalid blood type") String bloodType) {
+    public void setBloodType(@Pattern(regexp = "^(A|B|AB|O)[+-]$", message = "Groupe sanguin invalide") String bloodType) {
         this.bloodType = bloodType;
     }
 
@@ -121,11 +135,11 @@ public class CreatePatientRequest {
         this.address = address;
     }
 
-    public String getEmergencyContact() {
-        return emergencyContact;
+    public @Size(max = 500) String getProfilePicture() {
+        return profilePicture;
     }
 
-    public void setEmergencyContact(String emergencyContact) {
-        this.emergencyContact = emergencyContact;
+    public void setProfilePicture(@Size(max = 500) String profilePicture) {
+        this.profilePicture = profilePicture;
     }
 }

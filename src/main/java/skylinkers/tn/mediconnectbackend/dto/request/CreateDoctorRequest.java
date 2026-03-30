@@ -1,10 +1,13 @@
 package skylinkers.tn.mediconnectbackend.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import skylinkers.tn.mediconnectbackend.entities.enums.Gender;
 import skylinkers.tn.mediconnectbackend.entities.enums.Specialization;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 /** Used by POST /api/doctors — requires admin approval before account is APPROVED. */
 @Data
@@ -12,6 +15,11 @@ public class CreateDoctorRequest {
 
     @NotBlank @Email
     private String email;
+
+    @NotBlank
+    @Size(min = 8, max = 100)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String password;
 
     private String keycloakId;
 
@@ -30,7 +38,15 @@ public class CreateDoctorRequest {
     private Specialization specialization;
 
     @Size(max = 20)
+    @Pattern(regexp = "^\\+216\\d{8}$", message = "Numéro de téléphone invalide. Format attendu: +216XXXXXXXX")
     private String phone;
+
+    private LocalDate dateOfBirth;
+
+    private Gender gender;
+
+    @Size(max = 500)
+    private String address;
 
     @Size(max = 500)
     private String officeAddress;
@@ -44,12 +60,23 @@ public class CreateDoctorRequest {
     @DecimalMin("0.000") @DecimalMax("999999.999")
     private BigDecimal consultationFee;
 
+    @Size(max = 500)
+    private String profilePicture;
+
     public @NotBlank @Email String getEmail() {
         return email;
     }
 
     public void setEmail(@NotBlank @Email String email) {
         this.email = email;
+    }
+
+    public @NotBlank @Size(min = 8, max = 100) String getPassword() {
+        return password;
+    }
+
+    public void setPassword(@NotBlank @Size(min = 8, max = 100) String password) {
+        this.password = password;
     }
 
     public  String getKeycloakId() {
@@ -100,12 +127,44 @@ public class CreateDoctorRequest {
         this.phone = phone;
     }
 
+    public LocalDate getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public void setDateOfBirth(LocalDate dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
+
+    public Gender getGender() {
+        return gender;
+    }
+
+    public void setGender(Gender gender) {
+        this.gender = gender;
+    }
+
+    public @Size(max = 500) String getAddress() {
+        return address;
+    }
+
+    public void setAddress(@Size(max = 500) String address) {
+        this.address = address;
+    }
+
     public @Size(max = 500) String getOfficeAddress() {
         return officeAddress;
     }
 
     public void setOfficeAddress(@Size(max = 500) String officeAddress) {
         this.officeAddress = officeAddress;
+    }
+
+    public @Size(max = 500) String getProfilePicture() {
+        return profilePicture;
+    }
+
+    public void setProfilePicture(@Size(max = 500) String profilePicture) {
+        this.profilePicture = profilePicture;
     }
 
     public @Size(max = 50) String getLicenseNumber() {

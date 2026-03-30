@@ -28,6 +28,7 @@ public class AppUserResponse {
     // Doctor-specific — null for patients
     private String  specialization;
     private String  officeAddress;
+    private String  verificationStatus;
     private Boolean isVerified;
 
     // Patient-specific — null for doctors

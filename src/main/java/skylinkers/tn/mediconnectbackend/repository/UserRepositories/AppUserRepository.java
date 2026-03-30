@@ -25,5 +25,9 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> , JpaSpe
 
     @Query("SELECT u FROM AppUser u WHERE u.userType = :userType AND u.isActive = true")
     java.util.List<AppUser> findAllActiveByUserType(UserType userType);
+
+    long countByUserType(UserType userType);
+
+    long countByUserTypeAndIsActiveTrue(UserType userType);
 }
 

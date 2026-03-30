@@ -39,15 +39,15 @@ public class Doctor extends AppUser {
     private String rppsNumber;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
+    @Column(nullable = true, length = 30)
     private Specialization specialization;
 
     @Column(name = "license_number", length = 50)
     private String licenseNumber;
 
     /** Default slot duration in minutes; drives availability grid. */
-    @Column(name = "consultation_duration", nullable = false,columnDefinition = "INT DEFAULT 30")
-    private int consultationDuration = 30;
+    @Column(name = "consultation_duration", nullable = true)
+    private Integer consultationDuration;
 
     @Column(name = "office_address", length = 500)
     private String officeAddress;
@@ -57,8 +57,8 @@ public class Doctor extends AppUser {
      * A doctor with PENDING or REJECTED status cannot receive appointments.
      */
     @Enumerated(EnumType.STRING)
-    @Column(name = "verification_status", nullable = false, length = 20)
-    private VerificationStatus verificationStatus = VerificationStatus.PENDING;
+    @Column(name = "verification_status", nullable = true, length = 20)
+    private VerificationStatus verificationStatus;
 
     /** True once Google Calendar OAuth2 flow is completed. */
     @Column(name = "google_calendar_linked", nullable = false,columnDefinition = "BOOLEAN DEFAULT FALSE")
@@ -74,10 +74,6 @@ public class Doctor extends AppUser {
     /** Aggregate rating computed from patient feedback. */
     @Column(precision = 3, scale = 2)
     private BigDecimal rating;
-
-    /** Derived from verificationStatus == APPROVED; cached for fast queries. */
-    @Column(name = "is_verified", nullable = false,columnDefinition = "BOOLEAN DEFAULT FALSE")
-    private boolean isVerified = false;
 
     /** FK to the subscription plan chosen by this doctor. */
     @Column(name = "doctor_plan_id", length = 36)
@@ -107,11 +103,11 @@ public class Doctor extends AppUser {
         this.licenseNumber = licenseNumber;
     }
 
-    public int getConsultationDuration() {
+    public Integer getConsultationDuration() {
         return consultationDuration;
     }
 
-    public void setConsultationDuration(int consultationDuration) {
+    public void setConsultationDuration(Integer consultationDuration) {
         this.consultationDuration = consultationDuration;
     }
 
@@ -161,14 +157,6 @@ public class Doctor extends AppUser {
 
     public void setRating(BigDecimal rating) {
         this.rating = rating;
-    }
-
-    public boolean isVerified() {
-        return isVerified;
-    }
-
-    public void setVerified(boolean verified) {
-        isVerified = verified;
     }
 
     public String getDoctorPlanId() {

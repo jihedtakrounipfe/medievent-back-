@@ -1,6 +1,7 @@
 package skylinkers.tn.mediconnectbackend.entities;
 
 import skylinkers.tn.mediconnectbackend.entities.enums.UserType;
+import skylinkers.tn.mediconnectbackend.entities.enums.Gender;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,6 +12,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -79,6 +81,22 @@ public abstract class AppUser {
 
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
+
+    @Column(name = "is_verified", nullable = true, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private Boolean isVerified = Boolean.FALSE;
+
+    @Column(name = "date_of_birth", nullable = true)
+    private LocalDate dateOfBirth;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "gender", nullable = true, length = 30)
+    private Gender gender;
+
+    @Column(name = "address", nullable = true, length = 500)
+    private String address;
+
+    @Column(name = "emergency_contact", nullable = true, length = 255)
+    private String emergencyContact;
 
     /** Swift Object Storage URL for the profile picture. */
     @Column(name = "profile_picture", length = 500)
@@ -168,6 +186,46 @@ public abstract class AppUser {
 
     public void setActive(boolean active) {
         isActive = active;
+    }
+
+    public Boolean getIsVerified() {
+        return isVerified;
+    }
+
+    public void setIsVerified(Boolean isVerified) {
+        this.isVerified = isVerified;
+    }
+
+    public LocalDate getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public void setDateOfBirth(LocalDate dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
+
+    public Gender getGender() {
+        return gender;
+    }
+
+    public void setGender(Gender gender) {
+        this.gender = gender;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getEmergencyContact() {
+        return emergencyContact;
+    }
+
+    public void setEmergencyContact(String emergencyContact) {
+        this.emergencyContact = emergencyContact;
     }
 
     public String getProfilePicture() {

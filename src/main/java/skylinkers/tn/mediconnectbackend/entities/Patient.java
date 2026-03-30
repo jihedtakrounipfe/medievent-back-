@@ -1,6 +1,5 @@
 package skylinkers.tn.mediconnectbackend.entities;
 
-import skylinkers.tn.mediconnectbackend.entities.enums.Gender;
 import skylinkers.tn.mediconnectbackend.security.converter.AES256Converter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -8,8 +7,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-
-import java.time.LocalDate;
 
 /**
  * Subclass of AppUser representing a patient.
@@ -31,13 +28,6 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class Patient extends AppUser {
 
-    @Column(name = "date_of_birth", nullable = true)
-    private LocalDate dateOfBirth;
-
-    @Enumerated(EnumType.STRING)
-    @Column(length = 30)
-    private Gender gender;
-
     /**
      * French social security number — AES-256-GCM encrypted at rest.
      * RGPD Article 9: treated as sensitive personal data.
@@ -52,12 +42,6 @@ public class Patient extends AppUser {
 
     @Column(columnDefinition = "TEXT")
     private String allergies;
-
-    @Column(name = "emergency_contact", length = 255)
-    private String emergencyContact;
-
-    @Column(length = 500)
-    private String address;
 
     /**
      * True once the patient has completed biometric enrollment.
@@ -82,22 +66,6 @@ public class Patient extends AppUser {
     @Column(name = "patient_plan_id", length = 36)
     private String patientPlanId;
 
-    public LocalDate getDateOfBirth() {
-        return dateOfBirth;
-    }
-
-    public void setDateOfBirth(LocalDate dateOfBirth) {
-        this.dateOfBirth = dateOfBirth;
-    }
-
-    public Gender getGender() {
-        return gender;
-    }
-
-    public void setGender(Gender gender) {
-        this.gender = gender;
-    }
-
     public String getSocialSecurityNum() {
         return socialSecurityNum;
     }
@@ -120,22 +88,6 @@ public class Patient extends AppUser {
 
     public void setAllergies(String allergies) {
         this.allergies = allergies;
-    }
-
-    public String getEmergencyContact() {
-        return emergencyContact;
-    }
-
-    public void setEmergencyContact(String emergencyContact) {
-        this.emergencyContact = emergencyContact;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
     }
 
     public boolean isBiometricEnrolled() {
