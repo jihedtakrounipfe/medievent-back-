@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Compte rejeté</title>
+</head>
+<body style="margin:0;padding:0;background:#f6f9fc;font-family:Arial,Helvetica,sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f6f9fc;padding:24px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e6eef7;">
+          <tr>
+            <td style="padding:18px 22px;background:linear-gradient(90deg,#0ea5e9,#14b8a6);color:#ffffff;">
+              <div style="font-size:18px;font-weight:700;">MediConnect</div>
+              <div style="font-size:12px;opacity:0.9;">Notification compte médecin</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:22px;">
+              <h1 style="margin:0 0 10px 0;font-size:18px;color:#0f172a;">
+                Bonjour Dr <span th:text="${doctorName}">Nom</span>,
+              </h1>
+              <p style="margin:0 0 14px 0;font-size:14px;line-height:1.6;color:#334155;">
+                Votre demande de compte médecin a été rejetée.
+              </p>
+              <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:12px 14px;color:#9a3412;font-size:13px;line-height:1.5;">
+                <strong>Motif:</strong> <span th:text="${reason}">Raison</span>
+              </div>
+              <p style="margin:14px 0 0 0;font-size:14px;line-height:1.6;color:#334155;">
+                Vous pouvez corriger vos informations et soumettre une nouvelle demande.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:14px 22px;background:#f8fafc;border-top:1px solid #e6eef7;color:#64748b;font-size:12px;">
+              © 2026 MediConnect — La santé pour tous, accessible à tous
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+

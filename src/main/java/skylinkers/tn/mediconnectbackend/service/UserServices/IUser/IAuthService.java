@@ -2,6 +2,8 @@ package skylinkers.tn.mediconnectbackend.service.UserServices.IUser;
 
 import skylinkers.tn.mediconnectbackend.dto.request.LoginRequest;
 import skylinkers.tn.mediconnectbackend.dto.request.LoginWith2FARequest;
+import skylinkers.tn.mediconnectbackend.dto.request.ResendVerificationRequest;
+import skylinkers.tn.mediconnectbackend.dto.request.VerifyEmailRequest;
 import skylinkers.tn.mediconnectbackend.dto.response.AuthResponse;
 import skylinkers.tn.mediconnectbackend.dto.response.PatientResponse;
 import skylinkers.tn.mediconnectbackend.dto.response.DoctorResponse;
@@ -25,6 +27,10 @@ public interface IAuthService {
 
     /** Register a new doctor — account set to PENDING until admin approves. */
     AuthResponse registerDoctor(CreateDoctorRequest request);
+
+    AuthResponse verifyEmail(VerifyEmailRequest request);
+
+    AuthResponse resendVerification(ResendVerificationRequest request);
 
     /** Invalidate the Keycloak session + revoke Google refresh token if linked. */
     void logout(String keycloakId);

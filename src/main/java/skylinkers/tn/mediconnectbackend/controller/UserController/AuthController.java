@@ -91,6 +91,18 @@ public class AuthController {
                 .body(authService.registerDoctor(request));
     }
 
+    @PostMapping("/verify-email")
+    public ResponseEntity<AuthResponse> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
+        log.info("[AUTH] POST /verify-email — {}", request.getEmail());
+        return ResponseEntity.ok(authService.verifyEmail(request));
+    }
+
+    @PostMapping("/resend-verification")
+    public ResponseEntity<AuthResponse> resendVerification(@Valid @RequestBody ResendVerificationRequest request) {
+        log.info("[AUTH] POST /resend-verification — {}", request.getEmail());
+        return ResponseEntity.ok(authService.resendVerification(request));
+    }
+
     // ── Session Management ────────────────────────────────────────────────────
 
     /**
