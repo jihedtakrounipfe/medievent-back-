@@ -6,8 +6,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
+    username: ${MAIL_USERNAME:raouftakrouni0@gmail.com}
+    password: ${MAIL_PASSWORD:ygcn uenj clwq hhhd}
     properties:
       mail:
         smtp:
@@ -21,8 +21,10 @@ spring:
 
 mediconnect:
   upload:
-    image-path: C:\Users\amine\Desktop\MediConnect\Images
+    image-path: ./uploads/images
   mail:
     from-name: MediConnect
-    from-address: ${MAIL_USERNAME:}
+    from-address: ${MAIL_USERNAME:raouftakrouni0@gmail.com}
     enabled: true
+  app:
+    frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:4200}

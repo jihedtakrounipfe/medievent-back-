@@ -46,7 +46,7 @@ public class AuthServiceImpl implements IAuthService {
     private final VerificationCodeService verificationCodeService;
 
 
-    // ── TODO (Keycloak re-enable): inject KeycloakAdminClient, JwtDecoder ──
+    // ── NOTE (Keycloak re-enable): inject KeycloakAdminClient, JwtDecoder ──
 
     // ────────────────────────────────────────────────────────────────────────
     // Login

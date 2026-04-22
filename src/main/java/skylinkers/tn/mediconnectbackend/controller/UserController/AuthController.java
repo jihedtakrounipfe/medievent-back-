@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
  * Unified auth entry point — login, registration, logout, token refresh.
  *
  * Keycloak is currently disabled (DevSecurityConfig permits all).
- * All Keycloak-dependent logic is stubbed in AuthServiceImpl with TODO markers.
+ * All Keycloak-dependent logic is stubbed in AuthServiceImpl with development markers.
  * No @PreAuthorize annotations here — will be added when Keycloak is re-enabled.
  *
  * SOLID:

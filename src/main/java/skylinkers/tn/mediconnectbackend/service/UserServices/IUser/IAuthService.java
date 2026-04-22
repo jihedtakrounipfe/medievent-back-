@@ -5,8 +5,6 @@ import skylinkers.tn.mediconnectbackend.dto.request.LoginWith2FARequest;
 import skylinkers.tn.mediconnectbackend.dto.request.ResendVerificationRequest;
 import skylinkers.tn.mediconnectbackend.dto.request.VerifyEmailRequest;
 import skylinkers.tn.mediconnectbackend.dto.response.AuthResponse;
-import skylinkers.tn.mediconnectbackend.dto.response.PatientResponse;
-import skylinkers.tn.mediconnectbackend.dto.response.DoctorResponse;
 import skylinkers.tn.mediconnectbackend.dto.request.CreatePatientRequest;
 import skylinkers.tn.mediconnectbackend.dto.request.CreateDoctorRequest;
 

@@ -5,7 +5,6 @@ import skylinkers.tn.mediconnectbackend.dto.response.AppUserResponse;
 import skylinkers.tn.mediconnectbackend.entities.AppUser;
 import skylinkers.tn.mediconnectbackend.entities.Doctor;
 import skylinkers.tn.mediconnectbackend.entities.Patient;
-import skylinkers.tn.mediconnectbackend.entities.enums.UserType;
 import skylinkers.tn.mediconnectbackend.repository.UserRepositories.AppUserRepository;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;

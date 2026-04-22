@@ -62,6 +62,7 @@ public class Doctor extends AppUser {
 
     /** True once Google Calendar OAuth2 flow is completed. */
     @Column(name = "google_calendar_linked", nullable = false,columnDefinition = "BOOLEAN DEFAULT FALSE")
+    @lombok.Builder.Default
     private boolean googleCalendarLinked = false;
 
     /** FK to the Clinic entity in the clinic module (nullable for independent practitioners). */

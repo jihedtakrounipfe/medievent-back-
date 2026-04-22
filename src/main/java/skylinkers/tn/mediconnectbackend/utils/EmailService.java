@@ -39,9 +39,6 @@ public class EmailService {
         this.templateEngine = templateEngine;
     }
 
-    /**
-     * Sends an HTML email using a Thymeleaf template.
-     */
     @Async
     public void sendHtmlEmail(String to, String subject, String templateName, Map<String, Object> variables) {
         if (!enabled) return;
@@ -59,7 +56,9 @@ public class EmailService {
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(html, true);
+            log.info("Sending HTML email to: {} with subject: '{}'", to, subject);
             mailSender.send(message);
+            log.info("SUCCESS: HTML Email successfully sent to: {}", to);
         } catch (MessagingException e) {
             log.error("Failed to send email to {}", to, e);
         } catch (Exception e) {
@@ -67,9 +66,6 @@ public class EmailService {
         }
     }
 
-    /**
-     * Sends a plain text email.
-     */
     @Async
     public void sendSimpleEmail(String to, String subject, String body) {
         if (!enabled) return;
@@ -80,60 +76,50 @@ public class EmailService {
             msg.setTo(to);
             msg.setSubject(subject);
             msg.setText(body);
+            log.info("Sending simple email to: {} with subject: '{}'", to, subject);
             mailSender.send(msg);
+            log.info("SUCCESS: Simple Email successfully sent to: {}", to);
         } catch (Exception e) {
             log.error("Failed to send simple email to {}", to, e);
         }
     }
 
-    /**
-     * Sends a 6-digit verification code email.
-     */
     @Async
     public void sendVerificationCode(String to, String firstName, String code) {
-        sendHtmlEmail(
-                to,
-                "Vérification de votre email",
-                "verification-code.html",
-                Map.of("firstName", firstName, "code", code)
-        );
+        sendHtmlEmail(to, "Vérification de votre email", "verification-code.html", Map.of("firstName", firstName, "code", code));
     }
 
-    /**
-     * Sends a welcome email after registration.
-     */
     @Async
     public void sendWelcomeEmail(String to, String firstName) {
         sendHtmlEmail(to, "Bienvenue sur MediConnect", "welcome.html", Map.of("firstName", firstName));
     }
 
-    /**
-     * Sends approval notification for doctor accounts.
-     */
     @Async
     public void sendDoctorApprovedEmail(String to, String doctorName) {
         sendHtmlEmail(to, "Votre compte médecin est approuvé", "doctor-approved.html", Map.of("doctorName", doctorName));
     }
 
-    /**
-     * Sends rejection notification for doctor accounts.
-     */
     @Async
     public void sendDoctorRejectedEmail(String to, String doctorName, String reason) {
         sendHtmlEmail(to, "Votre compte médecin a été rejeté", "doctor-rejected.html", Map.of("doctorName", doctorName, "reason", reason));
     }
 
-    /**
-     * Sends password reset link.
-     */
     @Async
     public void sendPasswordResetEmail(String to, String resetLink) {
         sendHtmlEmail(to, "Réinitialisation de mot de passe", "password-reset.html", Map.of("resetLink", resetLink));
     }
 
-    /**
-     * Sends appointment reminder email.
-     */
+    @Async
+    public void sendGuestInvitationEmail(String to, String guestName, String doctorName, String eventTitle, String eventDate, String joinUrl) {
+        sendHtmlEmail(to, "🩺 Invitation — " + eventTitle, "guest-invitation.html", Map.of(
+                "guestName", guestName,
+                "doctorName", doctorName,
+                "eventTitle", eventTitle,
+                "eventDate", eventDate,
+                "joinUrl", joinUrl
+        ));
+    }
+
     @Async
     public void sendAppointmentReminderEmail(String to, String patientName, String doctorName, String dateTime) {
         sendHtmlEmail(to, "Rappel de rendez-vous", "appointment-reminder.html", Map.of(
@@ -143,32 +129,56 @@ public class EmailService {
         ));
     }
 
-    /**
-     * Sends a generic doctor account status change email.
-     */
     @Async
     public void sendDoctorStatusChangeEmail(String to, String doctorName, String oldStatus, String newStatus, String reason) {
-        sendHtmlEmail(
-                to,
-                "Changement de statut de votre compte médecin",
-                "doctor-status-change.html",
-                Map.of(
-                        "doctorName", doctorName,
-                        "oldStatus", oldStatus,
-                        "newStatus", newStatus,
-                        "reason", reason == null ? "" : reason
-                )
-        );
+        sendHtmlEmail(to, "Changement de statut de votre compte médecin", "doctor-status-change.html", Map.of(
+                "doctorName", doctorName,
+                "oldStatus", oldStatus,
+                "newStatus", newStatus,
+                "reason", reason == null ? "" : reason
+        ));
     }
 
+    @Async
+    public void sendParticipationConfirmedEmail(String to, String userName, String eventTitle, String eventDate, String eventLocation) {
+        sendHtmlEmail(to, "✅ Inscription Confirmée : " + eventTitle, "participation-confirmed.html", Map.of(
+                "userName", userName,
+                "eventTitle", eventTitle,
+                "eventDate", eventDate,
+                "eventLocation", eventLocation
+        ));
+    }
+
+    @Async
+    public void sendParticipationWaitlistEmail(String to, String userName, String eventTitle, String eventDate) {
+        sendHtmlEmail(to, "⏳ Inscription en Liste d'Attente : " + eventTitle, "participation-waitlist.html", Map.of(
+                "userName", userName,
+                "eventTitle", eventTitle,
+                "eventDate", eventDate
+        ));
+    }
+
+    @Async
+    public void sendParticipationPromotedEmail(String to, String userName, String eventTitle, String eventDate, String eventLocation) {
+        sendHtmlEmail(to, "🌟 Bonne Nouvelle : Votre place est confirmée pour " + eventTitle, "participation-promoted.html", Map.of(
+                "userName", userName,
+                "eventTitle", eventTitle,
+                "eventDate", eventDate,
+                "eventLocation", eventLocation
+        ));
+    }
+
+    @Async
     public void sendDoctorApprovalEmail(String to, String doctorName) {
         sendDoctorApprovedEmail(to, doctorName);
     }
 
+    @Async
     public void sendDoctorRejectionEmail(String to, String doctorName, String reason) {
         sendDoctorRejectedEmail(to, doctorName, reason);
     }
 
+    @Async
     public void sendEmail(String to, String subject, String templateName, Map<String, Object> variables) {
         sendHtmlEmail(to, subject, templateName, variables);
     }

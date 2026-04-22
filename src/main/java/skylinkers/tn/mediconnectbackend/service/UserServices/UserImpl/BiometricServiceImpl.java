@@ -2,7 +2,6 @@ package skylinkers.tn.mediconnectbackend.service.UserServices.UserImpl;
 
 import skylinkers.tn.mediconnectbackend.entities.AppUser;
 import skylinkers.tn.mediconnectbackend.entities.BiometricData;
-import skylinkers.tn.mediconnectbackend.entities.Patient;
 import skylinkers.tn.mediconnectbackend.exception.BiometricException;
 import skylinkers.tn.mediconnectbackend.exception.ResourceNotFoundException;
 import skylinkers.tn.mediconnectbackend.repository.UserRepositories.AppUserRepository;
@@ -70,6 +69,7 @@ public class BiometricServiceImpl implements BiometricService {
 
     @Override
     @Transactional(readOnly = true)
+    @SuppressWarnings("rawtypes")
     public boolean verifyBiometric(Long userId, byte[] photoBytes) {
         BiometricData stored = biometricDataRepository
                 .findByUserIdAndIsActiveTrue(userId)
@@ -119,6 +119,7 @@ public class BiometricServiceImpl implements BiometricService {
 
     // ── Private helpers ──────────────────────────────────────────────
 
+    @SuppressWarnings("rawtypes")
     private String callFaceService(String path, byte[] photoBytes) {
         String photoBase64 = Base64.getEncoder().encodeToString(photoBytes);
         HttpHeaders headers = new HttpHeaders();
@@ -141,3 +142,5 @@ public class BiometricServiceImpl implements BiometricService {
         // Doctors can also enroll — handled symmetrically by their repository
     }
 }
+
+// Force JDT refresh

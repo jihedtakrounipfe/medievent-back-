@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Place Confirmée - Promotion Liste Principale</title>
+</head>
+<body style="margin:0;padding:0;background:#f8fafc;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f8fafc;padding:40px 0;">
+    <tr>
+        <td align="center">
+            <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.05);border:1px solid #e2e8f0;">
+                <!-- Header -->
+                <tr>
+                    <td style="padding:40px;background:linear-gradient(135deg,#10b981,#059669);color:#ffffff;text-align:center;">
+                        <div style="font-size:12px;font-weight:800;letter-spacing:4px;text-transform:uppercase;opacity:0.8;margin-bottom:12px;">MediConnect Events</div>
+                        <h1 style="margin:0;font-size:28px;font-weight:800;letter-spacing:-0.5px;">Bonne Nouvelle ! 🌟</h1>
+                    </td>
+                </tr>
+                <!-- Content -->
+                <tr>
+                    <td style="padding:40px;color:#1e293b;">
+                        <p style="margin:0 0 20px 0;font-size:16px;line-height:1.6;">
+                            Bonjour <strong th:text="${userName}">Utilisateur</strong>,
+                        </p>
+                        <p style="margin:0 0 24px 0;font-size:16px;line-height:1.6;color:#475569;">
+                            Une place vient de se libérer ! Comme vous étiez en tête de la liste d'attente, vous avez été <strong>automatiquement promu sur la Liste Principale</strong>.
+                        </p>
+
+                        <!-- Event Info -->
+                        <div style="background:#ecfdf5;border:1px solid #d1fae5;border-radius:16px;padding:24px;margin-bottom:30px;">
+                            <div style="font-size:13px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Votre réservation est confirmée</div>
+                            <h2 style="margin:0 0- 12px 0;font-size:20px;font-weight:800;color:#0f172a;" th:text="${eventTitle}">Titre de l'événement</h2>
+                            <div style="font-size:15px;color:#64748b;margin-bottom:4px;">
+                                📅 <span th:text="${eventDate}">Date et Heure</span>
+                            </div>
+                            <div style="font-size:15px;color:#64748b;">
+                                📍 <span th:text="${eventLocation}">Lieu / Online</span>
+                            </div>
+                        </div>
+
+                        <p style="margin:0;font-size:14px;line-height:1.6;color:#64748b;text-align:center;">
+                            Votre participation est désormais garantie. Au plaisir de vous y voir !
+                        </p>
+                    </td>
+                </tr>
+                <!-- Footer -->
+                <tr>
+                    <td style="padding:24px;background:#f8fafc;border-top:1px solid #e2e8f0;text-align:center;">
+                        <p style="margin:0;font-size:12px;color:#94a3b8;">
+                            © 2026 MediConnect — La santé pour tous, accessible à tous.
+                        </p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

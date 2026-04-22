@@ -48,10 +48,12 @@ public class Patient extends AppUser {
      * Used to gate the facial-recognition MFA flow in Keycloak.
      */
     @Column(name = "biometric_enrolled", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    @lombok.Builder.Default
     private boolean biometricEnrolled = false;
 
     /** True once the patient's Google Calendar has been authorized. */
     @Column(name = "google_calendar_linked", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    @lombok.Builder.Default
     private boolean googleCalendarLinked = false;
 
     /**

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Invitation à une Conférence Médicale</title>
+</head>
+<body style="margin:0;padding:0;background:#0a0a12;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#0a0a12;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#111118;border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);">
+          
+          <!-- Header Brand -->
+          <tr>
+            <td style="padding:28px 36px;background:linear-gradient(135deg,#0d9488,#0891b2);color:#ffffff;text-align:center;">
+              <div style="font-size:11px;font-weight:900;letter-spacing:0.4em;text-transform:uppercase;opacity:0.8;margin-bottom:8px;">MediConnect</div>
+              <div style="font-size:28px;font-weight:900;letter-spacing:-1px;">Invitation à une<br>Conférence Live 🩺</div>
+            </td>
+          </tr>
+
+          <!-- Live Badge -->
+          <tr>
+            <td align="center" style="padding:28px 36px 0;">
+              <div style="display:inline-block;background:rgba(13,148,136,0.12);border:1px solid rgba(13,148,136,0.4);border-radius:100px;padding:8px 24px;">
+                <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#10b981;margin-right:8px;vertical-align:middle;"></span>
+                <span style="color:#2dd4bf;font-size:11px;font-weight:900;letter-spacing:0.2em;text-transform:uppercase;vertical-align:middle;">Session Virtuelle Sécurisée</span>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Content -->
+          <tr>
+            <td style="padding:28px 36px;color:#e2e8f0;">
+              <p style="margin:0 0 6px 0;font-size:13px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;">Bonjour,</p>
+              <h2 style="margin:0 0 20px 0;font-size:22px;font-weight:900;color:#f8fafc;" th:text="|${guestName}|">Cher Invité</h2>
+              
+              <p style="margin:0 0 20px 0;font-size:15px;line-height:1.7;color:#94a3b8;">
+                Le Docteur <strong style="color:#2dd4bf;" th:text="${doctorName}">Dr. Nom</strong> vous invite à rejoindre une conférence médicale exclusive en direct sur MediConnect.
+              </p>
+
+              <!-- Event Card -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;margin-bottom:28px;">
+                <tr>
+                  <td style="padding:20px 24px;">
+                    <div style="font-size:10px;font-weight:900;letter-spacing:0.2em;text-transform:uppercase;color:#64748b;margin-bottom:8px;">📅 Conférence</div>
+                    <div style="font-size:18px;font-weight:900;color:#f8fafc;margin-bottom:12px;" th:text="${eventTitle}">Titre de l'événement</div>
+                    <div style="font-size:13px;color:#64748b;margin-bottom:6px;">
+                      🕐 <span th:text="${eventDate}">Date et heure</span>
+                    </div>
+                    <div style="font-size:13px;color:#64748b;">
+                      🎥 <span style="color:#2dd4bf;font-weight:700;">Session Virtuelle — Accès par lien direct</span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA Button -->
+              <div th:if="${joinUrl != null}" style="text-align:center;margin-bottom:28px;">
+                <a th:href="${joinUrl}" style="display:inline-block;padding:16px 44px;background:linear-gradient(135deg,#0d9488,#0891b2);color:#ffffff;text-decoration:none;border-radius:16px;font-size:14px;font-weight:900;letter-spacing:0.05em;text-transform:uppercase;box-shadow:0 20px 40px rgba(13,148,136,0.4);">
+                  🎙️ Rejoindre la Conférence
+                </a>
+              </div>
+
+              <p style="margin:0 0 8px 0;font-size:12px;color:#475569;line-height:1.6;">
+                Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :
+              </p>
+              <p style="margin:0;font-size:11px;color:#0d9488;word-break:break-all;" th:text="${joinUrl}">https://...</p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:20px 36px;background:rgba(0,0,0,0.3);border-top:1px solid rgba(255,255,255,0.05);color:#475569;font-size:11px;text-align:center;line-height:1.6;">
+              Vous recevez cet email car le Dr <span th:text="${doctorName}">Docteur</span> vous a invité à cet événement.<br/>
+              © 2026 MediConnect — La santé, accessible à tous.
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

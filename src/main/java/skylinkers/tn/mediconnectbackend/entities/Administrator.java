@@ -42,6 +42,7 @@ public class Administrator extends AppUser {
      * Stored in DB to allow audit queries; never exposed to update endpoints.
      */
     @Column(name = "two_factor_enforced", nullable = false,columnDefinition = "BOOLEAN DEFAULT TRUE")
+    @lombok.Builder.Default
     private boolean twoFactorEnforced = true;
 
     /**
@@ -49,6 +50,7 @@ public class Administrator extends AppUser {
      * any DESTRUCTIVE or CRITICAL Keycloak admin action.
      */
     @Column(name = "biometric_required", nullable = false,columnDefinition = "BOOLEAN DEFAULT TRUE")
+    @lombok.Builder.Default
     private boolean biometricRequired = true;
 
     /** Tracks the last known IP for anomaly detection (geo-fencing alerts). */

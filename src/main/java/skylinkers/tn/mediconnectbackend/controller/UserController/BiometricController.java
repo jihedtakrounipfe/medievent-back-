@@ -1,9 +1,7 @@
 package skylinkers.tn.mediconnectbackend.controller.UserController;
 
-import skylinkers.tn.mediconnectbackend.dto.response.PatientResponse;
 import skylinkers.tn.mediconnectbackend.service.UserServices.IUser.BiometricService;
 import skylinkers.tn.mediconnectbackend.service.UserServices.IUser.PatientService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;

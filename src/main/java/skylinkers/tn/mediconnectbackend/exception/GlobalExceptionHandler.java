@@ -87,3 +87,5 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(status).body(body);
     }
 }
+
+// Force JDT refresh
