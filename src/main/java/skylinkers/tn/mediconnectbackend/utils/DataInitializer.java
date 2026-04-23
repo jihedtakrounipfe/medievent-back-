@@ -20,6 +20,7 @@ public class DataInitializer implements CommandLineRunner {
 
     private final DoctorRepository doctorRepository;
     private final PatientRepository patientRepository;
+    private final AdministratorRepository administratorRepository;
     private final MedicalEventRepository eventRepository;
     private final EventParticipantRepository participantRepository;
     private final skylinkers.tn.mediconnectbackend.service.security.KeycloakAdminClient keycloakAdminClient;
@@ -31,6 +32,9 @@ public class DataInitializer implements CommandLineRunner {
         log.info("[QUICK_INIT] Generating 3 confirmed spots + your waiting list spot...");
 
         try {
+            // 0. Create Administrator
+            ensureUser("admin@mediconnect.tn", "Admin", "System", UserType.ADMINISTRATOR);
+
             // 1. Create Organizer
             Doctor organizer = (Doctor) ensureUser("house@mediconnect.tn", "House", "Gregory", UserType.DOCTOR);
 
@@ -67,6 +71,15 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private AppUser ensureUser(String email, String last, String first, UserType type) {
+        if (type == UserType.ADMINISTRATOR) {
+            Optional<Administrator> existing = administratorRepository.findByEmail(email);
+            if (existing.isPresent()) return existing.get();
+            String kId = keycloakAdminClient.createAdministratorUser(email, TEST_PASSWORD, first, last);
+            Administrator admin = Administrator.builder().keycloakId(kId).email(email).lastName(last).firstName(first).isActive(true).isVerified(true).adminLevel(AdminLevel.SUPER_ADMIN).department("IT").build();
+            admin.setUserType(UserType.ADMINISTRATOR);
+            return administratorRepository.save(admin);
+        }
+
         Optional<? extends AppUser> existing = (type == UserType.DOCTOR) ? doctorRepository.findByEmail(email) : patientRepository.findByEmail(email);
         if (existing.isPresent()) return existing.get();
 
