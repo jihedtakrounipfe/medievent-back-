@@ -69,6 +69,11 @@ public class GlobalExceptionHandler {
         return build(status, ex.getReason() == null ? ex.getMessage() : ex.getReason(), req.getRequestURI(), null);
     }
 
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ApiError> handleAccessDenied(org.springframework.security.access.AccessDeniedException ex, HttpServletRequest req) {
+        return build(HttpStatus.FORBIDDEN, "Access denied: " + ex.getMessage(), req.getRequestURI(), null);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleAny(Exception ex, HttpServletRequest req) {
         log.error("Unhandled error", ex);

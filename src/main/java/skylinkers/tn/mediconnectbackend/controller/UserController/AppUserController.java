@@ -47,7 +47,7 @@ public class AppUserController {
      *   /users/search?name=benali&isActive=true&page=0&size=10
      */
     @GetMapping("/search")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('DOCTOR') or hasRole('PATIENT')")
     public ResponseEntity<Page<AppUserResponse>> search(
             @RequestParam(required = false) String         name,
             @RequestParam(required = false) String         email,

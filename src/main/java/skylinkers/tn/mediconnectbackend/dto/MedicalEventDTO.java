@@ -8,6 +8,7 @@ import skylinkers.tn.mediconnectbackend.entities.enums.EventAudience;
 import skylinkers.tn.mediconnectbackend.entities.enums.EventStatus;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -33,4 +34,18 @@ public class MedicalEventDTO {
     private Integer maxParticipants;
     private Long confirmedCount;
     private Long waitingListCount;
+    private List<SpeakerDTO> speakers;
+    private List<SpeakerDTO> moderators;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class SpeakerDTO {
+        private Long id;
+        private String fullName;
+        private String email;
+        private String specialization;
+        private String profilePicture;
+    }
 }

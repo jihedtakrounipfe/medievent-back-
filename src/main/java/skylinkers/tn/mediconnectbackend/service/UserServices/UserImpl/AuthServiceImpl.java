@@ -159,21 +159,26 @@ public class AuthServiceImpl implements IAuthService {
                     request.getLastName(),
                     request.getRppsNumber()
             );
-        } catch (HttpClientErrorException.Unauthorized e) {
+        } catch (HttpClientErrorException e) {
+            log.error("[AUTH] Keycloak registration failed: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
+            if (e.getStatusCode() == HttpStatus.CONFLICT) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Un utilisateur avec cet email existe déjà.", e);
+            }
             throw new ResponseStatusException(
                     HttpStatus.BAD_GATEWAY,
-                    "Keycloak admin authentication failed. Verify KEYCLOAK_ADMIN_USERNAME/KEYCLOAK_ADMIN_PASSWORD and that admin-cli direct access grants are enabled.",
+                    "Erreur lors de la création de l'utilisateur dans Keycloak: " + e.getMessage(),
                     e
             );
         } catch (ResourceAccessException e) {
+            log.error("[AUTH] Keycloak unreachable", e);
             throw new ResponseStatusException(
                     HttpStatus.BAD_GATEWAY,
-                    "Keycloak is unreachable. Verify keycloak.server-url and that Keycloak is running.",
+                    "Keycloak est inaccessible. Vérifiez que le service est démarré.",
                     e
             );
         }
-        request.setKeycloakId(keycloakId);
 
+        request.setKeycloakId(keycloakId);
         var doctor = doctorService.createDoctor(request);
         verificationCodeService.generateAndSend(request.getEmail(), request.getFirstName());
 

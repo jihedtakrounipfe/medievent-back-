@@ -80,6 +80,24 @@ public class MedicalEvent {
     @Builder.Default
     private List<EventParticipant> participants = new ArrayList<>();
 
+    @ManyToMany
+    @JoinTable(
+        name = "event_speakers",
+        joinColumns = @JoinColumn(name = "event_id"),
+        inverseJoinColumns = @JoinColumn(name = "doctor_id")
+    )
+    @Builder.Default
+    private List<Doctor> speakers = new ArrayList<>();
+
+    @ManyToMany
+    @JoinTable(
+        name = "event_moderators",
+        joinColumns = @JoinColumn(name = "event_id"),
+        inverseJoinColumns = @JoinColumn(name = "doctor_id")
+    )
+    @Builder.Default
+    private List<Doctor> moderators = new ArrayList<>();
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

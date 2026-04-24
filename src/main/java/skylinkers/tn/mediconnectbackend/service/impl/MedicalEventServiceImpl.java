@@ -33,6 +33,9 @@ public class MedicalEventServiceImpl implements MedicalEventService {
     private final EmailService emailService;
     private final org.springframework.kafka.core.KafkaTemplate<String, Object> kafkaTemplate;
     private static final String TOPIC = KafkaConfig.EVENT_PARTICIPATION_TOPIC;
+
+    @org.springframework.beans.factory.annotation.Value("${mediconnect.app.frontend-base-url:http://localhost:4200}")
+    private String frontendBaseUrl;
     @Override
     @Transactional
     public MedicalEventDTO createEvent(MedicalEventDTO dto, String doctorEmail) {
@@ -52,8 +55,36 @@ public class MedicalEventServiceImpl implements MedicalEventService {
                 .status(EventStatus.APPROVED)
                 .organizer(doctor)
                 .maxParticipants(dto.getMaxParticipants() != null ? dto.getMaxParticipants() : 50)
+                .speakers(dto.getSpeakers() != null ? dto.getSpeakers().stream()
+                        .map(s -> doctorRepository.findById(s.getId()).orElse(null))
+                        .filter(java.util.Objects::nonNull)
+                        .collect(Collectors.toList()) : new java.util.ArrayList<>())
+                .moderators(dto.getModerators() != null ? dto.getModerators().stream()
+                        .map(m -> doctorRepository.findById(m.getId()).orElse(null))
+                        .filter(java.util.Objects::nonNull)
+                        .collect(Collectors.toList()) : new java.util.ArrayList<>())
                 .build();
-        return mapToDTO(eventRepository.save(event));
+        MedicalEvent saved = eventRepository.save(event);
+        
+        // Notify co-presenters (speakers)
+        if (saved.getSpeakers() != null) {
+            String organizerName = "Dr. " + doctor.getFirstName() + " " + doctor.getLastName();
+            String dateStr = saved.getEventDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+            String joinUrl = frontendBaseUrl + "/events/" + saved.getId() + "/room";
+            
+            for (Doctor speaker : saved.getSpeakers()) {
+                emailService.sendGuestInvitationEmail(
+                    speaker.getEmail(),
+                    "Dr. " + speaker.getFirstName() + " " + speaker.getLastName(),
+                    organizerName,
+                    saved.getTitle(),
+                    dateStr,
+                    joinUrl
+                );
+            }
+        }
+        
+        return mapToDTO(saved);
     }
     @Override
     @Transactional
@@ -74,6 +105,18 @@ public class MedicalEventServiceImpl implements MedicalEventService {
         event.setAgenda(dto.getAgenda());
         event.setBannerUrl(dto.getBannerUrl());
         if (dto.getMaxParticipants() != null) event.setMaxParticipants(dto.getMaxParticipants());
+        if (dto.getSpeakers() != null) {
+            event.setSpeakers(dto.getSpeakers().stream()
+                    .map(s -> doctorRepository.findById(s.getId()).orElse(null))
+                    .filter(java.util.Objects::nonNull)
+                    .collect(Collectors.toList()));
+        }
+        if (dto.getModerators() != null) {
+            event.setModerators(dto.getModerators().stream()
+                    .map(m -> doctorRepository.findById(m.getId()).orElse(null))
+                    .filter(java.util.Objects::nonNull)
+                    .collect(Collectors.toList()));
+        }
         event.setStatus(EventStatus.APPROVED); // Auto-approved on update
         return mapToDTO(eventRepository.save(event));
     }
@@ -87,6 +130,43 @@ public class MedicalEventServiceImpl implements MedicalEventService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Unauthorized: You are not the organizer");
         }
         eventRepository.delete(event);
+    }
+
+    @Override
+    @Transactional
+    public MedicalEventDTO addSpeaker(Long eventId, Long doctorId, String organizerEmail) {
+        MedicalEvent event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
+        
+        if (!event.getOrganizer().getEmail().equalsIgnoreCase(organizerEmail)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the organizer can add speakers");
+        }
+        
+        Doctor doctor = doctorRepository.findById(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
+                
+        if (!event.getSpeakers().contains(doctor)) {
+            event.getSpeakers().add(doctor);
+        }
+        
+        return mapToDTO(eventRepository.save(event));
+    }
+
+    @Override
+    @Transactional
+    public void removeSpeaker(Long eventId, Long doctorId, String organizerEmail) {
+        MedicalEvent event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
+        
+        if (!event.getOrganizer().getEmail().equalsIgnoreCase(organizerEmail)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the organizer can remove speakers");
+        }
+        
+        Doctor doctor = doctorRepository.findById(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
+                
+        event.getSpeakers().remove(doctor);
+        eventRepository.save(event);
     }
 
     @Override
@@ -322,6 +402,24 @@ public class MedicalEventServiceImpl implements MedicalEventService {
                 .maxParticipants(event.getMaxParticipants())
                 .confirmedCount(participantRepository.countByEventAndStatus(event, ParticipantStatus.CONFIRMED))
                 .waitingListCount(participantRepository.countByEventAndStatus(event, ParticipantStatus.WAITING_LIST))
+                .speakers(event.getSpeakers() == null ? null : event.getSpeakers().stream()
+                        .map(s -> MedicalEventDTO.SpeakerDTO.builder()
+                                .id(s.getId())
+                                .fullName(s.getFirstName() + " " + s.getLastName())
+                                .email(s.getEmail())
+                                .specialization(s.getSpecialization() != null ? s.getSpecialization().name() : null)
+                                .profilePicture(s.getProfilePicture())
+                                .build())
+                        .collect(Collectors.toList()))
+                .moderators(event.getModerators() == null ? null : event.getModerators().stream()
+                        .map(m -> MedicalEventDTO.SpeakerDTO.builder()
+                                .id(m.getId())
+                                .fullName(m.getFirstName() + " " + m.getLastName())
+                                .email(m.getEmail())
+                                .specialization(m.getSpecialization() != null ? m.getSpecialization().name() : null)
+                                .profilePicture(m.getProfilePicture())
+                                .build())
+                        .collect(Collectors.toList()))
                 .build();
     }
 }

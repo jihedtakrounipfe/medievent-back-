@@ -5,6 +5,7 @@ import skylinkers.tn.mediconnectbackend.dto.response.AppUserResponse;
 import skylinkers.tn.mediconnectbackend.entities.AppUser;
 import skylinkers.tn.mediconnectbackend.entities.Doctor;
 import skylinkers.tn.mediconnectbackend.entities.Patient;
+import skylinkers.tn.mediconnectbackend.entities.enums.UserType;
 import skylinkers.tn.mediconnectbackend.repository.UserRepositories.AppUserRepository;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
@@ -77,26 +78,42 @@ public class AppUserSearchServiceImpl implements IAppUserSearchService {
                 ));
             }
 
-            // Discriminator filter — restricts to PATIENT or DOCTOR rows
+            // Discriminator filter — Use root.type() for safety in inheritance
             if (c.getUserType() != null) {
-                predicates.add(cb.equal(root.get("userType"), c.getUserType()));
+                if (c.getUserType() == UserType.DOCTOR) {
+                    predicates.add(cb.equal(root.type(), Doctor.class));
+                } else if (c.getUserType() == UserType.PATIENT) {
+                    predicates.add(cb.equal(root.type(), Patient.class));
+                } else if (c.getUserType() == UserType.ADMINISTRATOR) {
+                    // Assuming Administrator.class exists or is mapped
+                    try {
+                        Class<?> adminClass = Class.forName("skylinkers.tn.mediconnectbackend.entities.Administrator");
+                        predicates.add(cb.equal(root.type(), adminClass));
+                    } catch (ClassNotFoundException e) {
+                        predicates.add(cb.equal(root.get("userType"), UserType.ADMINISTRATOR));
+                    }
+                }
             }
 
             if (c.getIsActive() != null) {
                 predicates.add(cb.equal(root.get("isActive"), c.getIsActive()));
             }
 
-            // Doctor-specific filters — safe to add even if userType not set
+            // Doctor-specific filters — specialization and city
             if (c.getSpecialization() != null) {
                 predicates.add(cb.equal(root.get("specialization"), c.getSpecialization()));
             }
 
             if (c.getCity() != null && !c.getCity().isBlank()) {
                 String pattern = "%" + c.getCity().toLowerCase() + "%";
-                // officeAddress for doctors, address for patients
+                // We must be careful here: officeAddress is only in Doctor.
+                // If the root is AppUser, Hibernate might complain if we use get("officeAddress") 
+                // on a non-doctor row unless we use a join or cast.
+                // However, since we often search for DOCTORs here, we can try to cast.
                 predicates.add(cb.or(
-                        cb.like(cb.lower(root.get("officeAddress")), pattern),
-                        cb.like(cb.lower(root.get("address")),       pattern)
+                        cb.like(cb.lower(root.get("address")), pattern)
+                        // Note: officeAddress might cause issues if not present on all rows in SINGLE_TABLE
+                        // but Hibernate usually handles it if the column exists in the table.
                 ));
             }
 

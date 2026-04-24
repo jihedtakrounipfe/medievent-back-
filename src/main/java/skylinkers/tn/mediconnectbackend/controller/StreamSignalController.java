@@ -6,115 +6,130 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
- * In-memory signaling controller for WebRTC P2P sessions.
- *
- * Architecture (HOST → SPECTATOR push):
- *  1. Spectator registers its PeerJS ID via POST /spectator
- *  2. Host goes live via POST /register, publishing its own PeerJS ID
- *  3. Host polls GET /spectators to discover waiting spectators, then calls them directly
- *  4. On leave: spectator unregisters via DELETE /spectator/{peerId}
- *  5. On session end: host calls DELETE /register to clear everything
- *
- * State is in-memory only – lost on restart (acceptable for live events).
+ * In-memory signaling controller for WebRTC P2P sessions with Heartbeat and Hand Raise.
  */
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/stream")
 public class StreamSignalController {
 
-    // eventId → host PeerJS ID (null if not yet live)
-    private final ConcurrentHashMap<String, String> hostSession = new ConcurrentHashMap<>();
+    private static final long STALE_TIMEOUT_MS = 15000; // 15 seconds
 
-    // eventId → set of spectator PeerJS IDs waiting to be called
-    private final ConcurrentHashMap<String, CopyOnWriteArraySet<String>> spectatorSessions =
-            new ConcurrentHashMap<>();
+    // eventId -> Map<peerId, lastSeenTimestamp>
+    private final ConcurrentHashMap<String, ConcurrentHashMap<String, Long>> hostSessions = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, ConcurrentHashMap<String, Long>> spectatorSessions = new ConcurrentHashMap<>();
+    
+    // eventId -> List of HandRaise (PeerID + Name)
+    private final ConcurrentHashMap<String, List<Map<String, String>>> pendingHandRaises = new ConcurrentHashMap<>();
+
+    private void cleanupStale(ConcurrentHashMap<String, Long> sessions, String eventId, boolean isHost) {
+        long now = System.currentTimeMillis();
+        sessions.entrySet().removeIf(entry -> {
+            boolean isStale = (now - entry.getValue()) > STALE_TIMEOUT_MS;
+            if (isStale && !isHost) {
+                // If spectator is stale, also remove their hand raise
+                removeHandRaise(eventId, entry.getKey());
+            }
+            return isStale;
+        });
+    }
+
+    private void removeHandRaise(String eventId, String peerId) {
+        List<Map<String, String>> list = pendingHandRaises.get(eventId);
+        if (list != null) {
+            list.removeIf(hr -> peerId.equals(hr.get("peerId")));
+        }
+    }
 
     // ── HOST endpoints ────────────────────────────────────────────────────────
 
-    /**
-     * HOST registers its PeerJS ID when going live.
-     */
     @PostMapping("/{eventId}/register")
-    public ResponseEntity<Object> registerHost(
-            @PathVariable String eventId,
-            @RequestBody Map<String, String> body) {
+    public ResponseEntity<Object> registerHost(@PathVariable String eventId, @RequestBody Map<String, String> body) {
         String peerId = body.get("peerId");
-        if (peerId == null || peerId.isBlank()) {
-            return ResponseEntity.badRequest().build();
-        }
-        log.info("[SIGNAL] Host {} registered for event {}", peerId, eventId);
-        hostSession.put(eventId, peerId);
-        return ResponseEntity.ok(Map.of("message", "Host registered"));
+        if (peerId == null || peerId.isBlank()) return ResponseEntity.badRequest().build();
+        hostSessions.computeIfAbsent(eventId, k -> new ConcurrentHashMap<>()).put(peerId, System.currentTimeMillis());
+        return ResponseEntity.ok(Map.of("message", "Host heartbeat"));
     }
 
-    /**
-     * HOST retrieves list of spectators currently waiting.
-     */
     @GetMapping("/{eventId}/spectators")
     public ResponseEntity<Map<String, Object>> getSpectators(@PathVariable String eventId) {
-        Set<String> spectators = spectatorSessions.getOrDefault(eventId, new CopyOnWriteArraySet<>());
-        return ResponseEntity.ok(Map.of("spectators", new ArrayList<>(spectators)));
+        ConcurrentHashMap<String, Long> spectators = spectatorSessions.getOrDefault(eventId, new ConcurrentHashMap<>());
+        cleanupStale(spectators, eventId, false);
+        return ResponseEntity.ok(Map.of("spectators", new ArrayList<>(spectators.keySet())));
     }
 
-    /**
-     * HOST ends the session – clears all state for this event.
-     */
-    @DeleteMapping("/{eventId}/register")
-    public ResponseEntity<Object> clearHost(@PathVariable String eventId) {
-        hostSession.remove(eventId);
-        spectatorSessions.remove(eventId);
-        return ResponseEntity.ok(Map.of("message", "Host session cleared"));
+    @DeleteMapping("/{eventId}/register/{peerId}")
+    public ResponseEntity<Object> unregisterHost(@PathVariable String eventId, @PathVariable String peerId) {
+        ConcurrentHashMap<String, Long> set = hostSessions.get(eventId);
+        if (set != null) set.remove(peerId);
+        return ResponseEntity.ok(Map.of("message", "Host removed"));
     }
 
     // ── SPECTATOR endpoints ───────────────────────────────────────────────────
 
-    /**
-     * SPECTATOR registers its PeerJS ID so the host can call it.
-     */
     @PostMapping("/{eventId}/spectator")
-    public ResponseEntity<Map<String, Object>> registerSpectator(
-            @PathVariable String eventId,
-            @RequestBody Map<String, String> body) {
+    public ResponseEntity<Map<String, Object>> registerSpectator(@PathVariable String eventId, @RequestBody Map<String, String> body) {
         String peerId = body.get("peerId");
-        if (peerId == null || peerId.isBlank()) {
-            return ResponseEntity.badRequest().build();
-        }
-        spectatorSessions
-                .computeIfAbsent(eventId, k -> new CopyOnWriteArraySet<>())
-                .add(peerId);
-        log.info("[SIGNAL] Spectator {} registered for event {}", peerId, eventId);
-
-        // Tell specatator if the host is already live
-        boolean isLive = hostSession.containsKey(eventId);
-        Map<String, Object> response = new HashMap<>();
-        response.put("registered", true);
-        response.put("hostIsLive", isLive);
-        return ResponseEntity.ok(response);
+        if (peerId == null || peerId.isBlank()) return ResponseEntity.badRequest().build();
+        spectatorSessions.computeIfAbsent(eventId, k -> new ConcurrentHashMap<>()).put(peerId, System.currentTimeMillis());
+        
+        ConcurrentHashMap<String, Long> hosts = hostSessions.getOrDefault(eventId, new ConcurrentHashMap<>());
+        cleanupStale(hosts, eventId, true);
+        
+        return ResponseEntity.ok(Map.of("registered", true, "hostIsLive", !hosts.isEmpty()));
     }
 
-    /**
-     * SPECTATOR unregisters when leaving (optional but clean).
-     */
     @DeleteMapping("/{eventId}/spectator/{peerId}")
-    public ResponseEntity<Object> unregisterSpectator(
-            @PathVariable String eventId,
-            @PathVariable String peerId) {
-        CopyOnWriteArraySet<String> set = spectatorSessions.get(eventId);
+    public ResponseEntity<Object> unregisterSpectator(@PathVariable String eventId, @PathVariable String peerId) {
+        ConcurrentHashMap<String, Long> set = spectatorSessions.get(eventId);
         if (set != null) set.remove(peerId);
-        return ResponseEntity.ok(Map.of("message", "Spectator unregistered"));
+        removeHandRaise(eventId, peerId);
+        return ResponseEntity.ok(Map.of("message", "Spectator removed"));
     }
 
-    // ── Legacy signal endpoint (kept for backward compat / diagnostics) ───────
+    // ── HAND RAISE endpoints ──────────────────────────────────────────────────
+
+    @PostMapping("/{eventId}/hand-raise")
+    public ResponseEntity<Object> requestToSpeak(@PathVariable String eventId, @RequestBody Map<String, String> body) {
+        String peerId = body.get("peerId");
+        String name = body.get("name");
+        if (peerId == null || name == null) return ResponseEntity.badRequest().build();
+        
+        List<Map<String, String>> list = pendingHandRaises.computeIfAbsent(eventId, k -> Collections.synchronizedList(new ArrayList<>()));
+        // Avoid duplicates
+        list.removeIf(hr -> peerId.equals(hr.get("peerId")));
+        list.add(Map.of("peerId", peerId, "name", name));
+        
+        return ResponseEntity.ok(Map.of("status", "requested"));
+    }
+
+    @GetMapping("/{eventId}/hand-raises")
+    public ResponseEntity<List<Map<String, String>>> getHandRaises(@PathVariable String eventId) {
+        return ResponseEntity.ok(pendingHandRaises.getOrDefault(eventId, new ArrayList<>()));
+    }
+
+    @PostMapping("/{eventId}/hand-raise/action")
+    public ResponseEntity<Object> handleHandRaiseAction(@PathVariable String eventId, @RequestBody Map<String, String> body) {
+        String peerId = body.get("peerId");
+        String action = body.get("action"); // "ACCEPT" or "REJECT"
+        if (peerId == null || action == null) return ResponseEntity.badRequest().build();
+        
+        removeHandRaise(eventId, peerId);
+        
+        if ("ACCEPT".equalsIgnoreCase(action)) {
+            // Promote to host session
+            hostSessions.computeIfAbsent(eventId, k -> new ConcurrentHashMap<>()).put(peerId, System.currentTimeMillis());
+            return ResponseEntity.ok(Map.of("status", "accepted"));
+        }
+        return ResponseEntity.ok(Map.of("status", "rejected"));
+    }
 
     @GetMapping("/{eventId}/signal")
     public ResponseEntity<Map<String, Object>> getSignal(@PathVariable String eventId) {
-        String hostPeerId = hostSession.get(eventId);
-        Map<String, Object> response = new HashMap<>();
-        response.put("isLive", hostPeerId != null);
-        if (hostPeerId != null) response.put("hostPeerId", hostPeerId);
-        return ResponseEntity.ok(response);
+        ConcurrentHashMap<String, Long> hosts = hostSessions.getOrDefault(eventId, new ConcurrentHashMap<>());
+        cleanupStale(hosts, eventId, true);
+        return ResponseEntity.ok(Map.of("isLive", !hosts.isEmpty(), "hosts", new ArrayList<>(hosts.keySet())));
     }
 }

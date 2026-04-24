@@ -10,6 +10,8 @@ public interface MedicalEventService {
     MedicalEventDTO createEvent(MedicalEventDTO dto, String doctorEmail);
     MedicalEventDTO updateEvent(Long id, MedicalEventDTO dto, String doctorEmail);
     void deleteEvent(Long id, String requesterEmail);
+    MedicalEventDTO addSpeaker(Long eventId, Long doctorId, String organizerEmail);
+    void removeSpeaker(Long eventId, Long doctorId, String organizerEmail);
     MedicalEventDTO getEventById(Long id);
     
     List<MedicalEventDTO> getMyEvents(String doctorEmail);

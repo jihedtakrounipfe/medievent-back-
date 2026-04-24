@@ -18,10 +18,13 @@ public class ChatController {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class ChatMessage {
+        private Long senderId;
         private String sender;
         private String content;
         private String timestamp;
         private String role;
+        private String replyTo;
+        private String replyToSender;
     }
 
     /**

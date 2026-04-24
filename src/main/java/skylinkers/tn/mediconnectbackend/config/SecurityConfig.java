@@ -20,8 +20,10 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Configuration
@@ -79,19 +81,43 @@ public class SecurityConfig {
     private static class RealmRolesConverter implements Converter<Jwt, Collection<GrantedAuthority>> {
         @Override
         public Collection<GrantedAuthority> convert(Jwt jwt) {
+            Set<String> allRoles = new HashSet<>();
+            
+            // 1. Realm Roles
             Object realmAccess = jwt.getClaims().get("realm_access");
-            if (!(realmAccess instanceof Map<?, ?> realmAccessMap)) {
-                return List.of();
+            if (realmAccess instanceof Map<?, ?> realmAccessMap) {
+                Object roles = realmAccessMap.get("roles");
+                if (roles instanceof List<?> rolesList) {
+                    rolesList.stream().filter(String.class::isInstance).map(String.class::cast).forEach(allRoles::add);
+                }
             }
-            Object roles = realmAccessMap.get("roles");
-            if (!(roles instanceof List<?> rolesList)) {
-                return List.of();
+
+            // 2. Client Roles (resource_access -> angular-spa -> roles)
+            Object resourceAccess = jwt.getClaims().get("resource_access");
+            if (resourceAccess instanceof Map<?, ?> resourceAccessMap) {
+                Object clientAccess = resourceAccessMap.get("angular-spa");
+                if (clientAccess instanceof Map<?, ?> clientAccessMap) {
+                    Object roles = clientAccessMap.get("roles");
+                    if (roles instanceof List<?> rolesList) {
+                        rolesList.stream().filter(String.class::isInstance).map(String.class::cast).forEach(allRoles::add);
+                    }
+                }
             }
-            return rolesList.stream()
-                    .filter(String.class::isInstance)
-                    .map(String.class::cast)
-                    .map(SimpleGrantedAuthority::new)
-                    .collect(Collectors.toSet());
+
+            Collection<GrantedAuthority> authorities = new HashSet<>();
+            for (String r : allRoles) {
+                String roleWithPrefix = r.startsWith("ROLE_") ? r : "ROLE_" + r;
+                authorities.add(new SimpleGrantedAuthority(roleWithPrefix));
+                
+                // Alias specific doctor roles to a generic DOCTOR role
+                if (r.equals("DOCTOR_GP") || r.equals("DOCTOR_SPECIALIST") || 
+                    r.equals("ROLE_DOCTOR_GP") || r.equals("ROLE_DOCTOR_SPECIALIST")) {
+                    authorities.add(new SimpleGrantedAuthority("ROLE_DOCTOR"));
+                }
+            }
+            
+            System.out.println("[SECURITY] Final Authorities: " + authorities);
+            return authorities;
         }
     }
 }

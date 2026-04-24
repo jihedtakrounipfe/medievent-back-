@@ -16,7 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/doctor/events")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('DOCTOR_GP', 'DOCTOR_SPECIALIST')")
+@PreAuthorize("hasRole('DOCTOR')")
 public class MedicalEventController {
 
     private final MedicalEventService eventService;
@@ -47,5 +47,15 @@ public class MedicalEventController {
             log.error("[DOCTOR-API] Error fetching events for {}: {}", email, e.getMessage(), e);
             throw e;
         }
+    }
+    @PostMapping("/{id}/speakers/{doctorId}")
+    public ResponseEntity<MedicalEventDTO> addSpeaker(@PathVariable Long id, @PathVariable Long doctorId, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(eventService.addSpeaker(id, doctorId, jwt.getClaimAsString("email")));
+    }
+
+    @DeleteMapping("/{id}/speakers/{doctorId}")
+    public ResponseEntity<Void> removeSpeaker(@PathVariable Long id, @PathVariable Long doctorId, @AuthenticationPrincipal Jwt jwt) {
+        eventService.removeSpeaker(id, doctorId, jwt.getClaimAsString("email"));
+        return ResponseEntity.noContent().build();
     }
 }
