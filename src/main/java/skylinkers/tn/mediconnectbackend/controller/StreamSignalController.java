@@ -13,7 +13,9 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/stream")
+@lombok.RequiredArgsConstructor
 public class StreamSignalController {
+    private final skylinkers.tn.mediconnectbackend.repository.MedicalEventRepository eventRepository;
 
     private static final long STALE_TIMEOUT_MS = 15000; // 15 seconds
 
@@ -73,7 +75,24 @@ public class StreamSignalController {
     public ResponseEntity<Map<String, Object>> registerSpectator(@PathVariable String eventId, @RequestBody Map<String, String> body) {
         String peerId = body.get("peerId");
         if (peerId == null || peerId.isBlank()) return ResponseEntity.badRequest().build();
-        spectatorSessions.computeIfAbsent(eventId, k -> new ConcurrentHashMap<>()).put(peerId, System.currentTimeMillis());
+        
+        ConcurrentHashMap<String, Long> spectators = spectatorSessions.computeIfAbsent(eventId, k -> new ConcurrentHashMap<>());
+        cleanupStale(spectators, eventId, false);
+
+        // Enforcement: only simple spectators are limited by maxParticipants
+        try {
+            var event = eventRepository.findById(Long.parseLong(eventId)).orElse(null);
+            if (event != null && event.getMaxParticipants() != null) {
+                if (spectators.size() >= event.getMaxParticipants() && !spectators.containsKey(peerId)) {
+                    log.warn("[STREAM] Room full for event {}: {} participants", eventId, spectators.size());
+                    return ResponseEntity.status(403).body(Map.of("error", "CAPACITY_FULL", "max", event.getMaxParticipants()));
+                }
+            }
+        } catch (Exception e) {
+            log.error("[STREAM] Error checking capacity: {}", e.getMessage());
+        }
+
+        spectators.put(peerId, System.currentTimeMillis());
         
         ConcurrentHashMap<String, Long> hosts = hostSessions.getOrDefault(eventId, new ConcurrentHashMap<>());
         cleanupStale(hosts, eventId, true);

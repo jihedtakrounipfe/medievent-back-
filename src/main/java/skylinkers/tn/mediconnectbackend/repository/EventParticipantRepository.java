@@ -3,10 +3,10 @@ package skylinkers.tn.mediconnectbackend.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import skylinkers.tn.mediconnectbackend.entities.EventParticipant;
-import skylinkers.tn.mediconnectbackend.entities.enums.ParticipantStatus;
-import skylinkers.tn.mediconnectbackend.entities.MedicalEvent;
 import skylinkers.tn.mediconnectbackend.entities.AppUser;
-
+import skylinkers.tn.mediconnectbackend.entities.MedicalEvent;
+import skylinkers.tn.mediconnectbackend.entities.enums.ParticipantRole;
+import skylinkers.tn.mediconnectbackend.entities.enums.ParticipantStatus;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,5 +19,6 @@ public interface EventParticipantRepository extends JpaRepository<EventParticipa
     boolean existsByEventAndUser(MedicalEvent event, AppUser user);
     
     long countByEventAndStatus(MedicalEvent event, ParticipantStatus status);
+    long countByEventAndStatusAndRole(MedicalEvent event, ParticipantStatus status, ParticipantRole role);
     Optional<EventParticipant> findFirstByEventAndStatusOrderByCreatedAtAsc(MedicalEvent event, ParticipantStatus status);
 }

@@ -29,4 +29,5 @@ public interface MedicalEventService {
     List<MedicalEventDTO> getMyInvitations(String userEmail);
     List<skylinkers.tn.mediconnectbackend.dto.MyParticipationDTO> getMyParticipations(String userEmail);
     void cancelParticipation(Long eventId, String userEmail);
+    void completeEvent(Long id, String organizerEmail, Integer participantCount);
 }

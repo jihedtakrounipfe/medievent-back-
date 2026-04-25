@@ -11,4 +11,5 @@ import java.util.List;
 public interface MedicalEventRepository extends JpaRepository<MedicalEvent, Long> {
     List<MedicalEvent> findAllByStatus(EventStatus status);
     List<MedicalEvent> findAllByOrganizerId(Long doctorId);
+    long countByOrganizerAndEventDateBetween(skylinkers.tn.mediconnectbackend.entities.Doctor organizer, java.time.LocalDateTime start, java.time.LocalDateTime end);
 }

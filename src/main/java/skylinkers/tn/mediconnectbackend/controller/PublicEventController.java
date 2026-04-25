@@ -23,9 +23,12 @@ public class PublicEventController {
     public ResponseEntity<List<MedicalEventDTO>> getActiveEvents() {
         List<MedicalEventDTO> approved = eventService.getEventsByStatus(EventStatus.APPROVED);
         List<MedicalEventDTO> pending = eventService.getEventsByStatus(EventStatus.PENDING);
+        List<MedicalEventDTO> completed = eventService.getEventsByStatus(EventStatus.COMPLETED);
+        
         List<MedicalEventDTO> all = new java.util.ArrayList<>();
         all.addAll(approved);
         all.addAll(pending);
+        all.addAll(completed);
         return ResponseEntity.ok(all);
     }
 

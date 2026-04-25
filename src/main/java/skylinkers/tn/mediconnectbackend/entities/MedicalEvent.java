@@ -76,6 +76,9 @@ public class MedicalEvent {
     @Column(name = "rejection_reason", length = 500)
     private String rejectionReason;
 
+    @Column(name = "final_participant_count")
+    private Integer finalParticipantCount;
+
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<EventParticipant> participants = new ArrayList<>();

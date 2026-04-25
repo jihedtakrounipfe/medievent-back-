@@ -58,4 +58,12 @@ public class MedicalEventController {
         eventService.removeSpeaker(id, doctorId, jwt.getClaimAsString("email"));
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/{id}/complete")
+    public ResponseEntity<Void> complete(@PathVariable Long id, 
+                                         @RequestParam(required = false) Integer participantCount,
+                                         @AuthenticationPrincipal Jwt jwt) {
+        eventService.completeEvent(id, jwt.getClaimAsString("email"), participantCount);
+        return ResponseEntity.noContent().build();
+    }
 }

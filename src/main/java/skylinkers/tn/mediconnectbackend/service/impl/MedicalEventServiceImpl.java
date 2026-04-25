@@ -41,6 +41,15 @@ public class MedicalEventServiceImpl implements MedicalEventService {
     public MedicalEventDTO createEvent(MedicalEventDTO dto, String doctorEmail) {
         Doctor doctor = doctorRepository.findByEmail(doctorEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
+
+        // Overlap Check (± 1 hour)
+        java.time.LocalDateTime startWindow = dto.getEventDate().minusHours(1);
+        java.time.LocalDateTime endWindow = dto.getEventDate().plusHours(1);
+        long existing = eventRepository.countByOrganizerAndEventDateBetween(doctor, startWindow, endWindow);
+        if (existing > 0) {
+            throw new IllegalArgumentException("Vous avez déjà une conférence prévue à ce créneau horaire (intervalle de 1h)");
+        }
+
         MedicalEvent event = MedicalEvent.builder()
                 .title(dto.getTitle())
                 .description(dto.getDescription())
@@ -147,9 +156,26 @@ public class MedicalEventServiceImpl implements MedicalEventService {
                 
         if (!event.getSpeakers().contains(doctor)) {
             event.getSpeakers().add(doctor);
+            // Notify co-presenter via email
+            sendInvitationEmail(doctor, event);
         }
         
         return mapToDTO(eventRepository.save(event));
+    }
+    
+    @Override
+    @Transactional
+    public void completeEvent(Long id, String organizerEmail, Integer participantCount) {
+        MedicalEvent event = eventRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
+        
+        if (!event.getOrganizer().getEmail().equalsIgnoreCase(organizerEmail)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the organizer can complete the event");
+        }
+        
+        event.setStatus(EventStatus.COMPLETED);
+        event.setFinalParticipantCount(participantCount);
+        eventRepository.save(event);
     }
 
     @Override
@@ -227,7 +253,7 @@ public class MedicalEventServiceImpl implements MedicalEventService {
         if (participantRepository.existsByEventAndUser(event, user)) {
             throw new IllegalArgumentException("User already participating");
         }
-        long activeCount = participantRepository.countByEventAndStatus(event, ParticipantStatus.CONFIRMED);
+        long activeCount = participantRepository.countByEventAndStatusAndRole(event, ParticipantStatus.CONFIRMED, ParticipantRole.PARTICIPANT);
         ParticipantStatus targetStatus = (activeCount < event.getMaxParticipants()) 
                 ? ParticipantStatus.CONFIRMED 
                 : ParticipantStatus.WAITING_LIST;
@@ -305,7 +331,12 @@ public class MedicalEventServiceImpl implements MedicalEventService {
                 .status(ParticipantStatus.PENDING_INVITE)
                 .build();
                 
-        return mapToParticipantDTO(participantRepository.save(participant));
+        ParticipantDTO saved = mapToParticipantDTO(participantRepository.save(participant));
+        
+        // Notify guest doctor via email
+        sendInvitationEmail(userToInvite, event);
+        
+        return saved;
     }
     @Override
     @Transactional
@@ -332,6 +363,7 @@ public class MedicalEventServiceImpl implements MedicalEventService {
                 .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
                 
         return participantRepository.findByEvent(event).stream()
+                .filter(p -> p.getRole() == ParticipantRole.PARTICIPANT && p.getStatus() == ParticipantStatus.CONFIRMED)
                 .map(this::mapToParticipantDTO)
                 .collect(Collectors.toList());
     }
@@ -371,6 +403,23 @@ public class MedicalEventServiceImpl implements MedicalEventService {
                 })
                 .collect(Collectors.toList());
     }
+    private void sendInvitationEmail(AppUser recipient, MedicalEvent event) {
+        String organizerName = "Dr. " + event.getOrganizer().getFirstName() + " " + event.getOrganizer().getLastName();
+        String recipientName = "Dr. " + recipient.getFirstName() + " " + recipient.getLastName();
+        String dateStr = event.getEventDate() != null ? 
+            event.getEventDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")) : "À venir";
+        String joinUrl = frontendBaseUrl + "/events/" + event.getId(); 
+        
+        emailService.sendGuestInvitationEmail(
+            recipient.getEmail(),
+            recipientName,
+            organizerName,
+            event.getTitle(),
+            dateStr,
+            joinUrl
+        );
+    }
+
     private ParticipantDTO mapToParticipantDTO(EventParticipant participant) {
         return ParticipantDTO.builder()
                 .id(participant.getId())
@@ -399,9 +448,10 @@ public class MedicalEventServiceImpl implements MedicalEventService {
                 .organizerName(event.getOrganizer().getFirstName() + " " + event.getOrganizer().getLastName())
                 .organizerEmail(event.getOrganizer().getEmail())
                 .rejectionReason(event.getRejectionReason())
+                .finalParticipantCount(event.getFinalParticipantCount())
                 .maxParticipants(event.getMaxParticipants())
-                .confirmedCount(participantRepository.countByEventAndStatus(event, ParticipantStatus.CONFIRMED))
-                .waitingListCount(participantRepository.countByEventAndStatus(event, ParticipantStatus.WAITING_LIST))
+                .confirmedCount(participantRepository.countByEventAndStatusAndRole(event, ParticipantStatus.CONFIRMED, ParticipantRole.PARTICIPANT))
+                .waitingListCount(participantRepository.countByEventAndStatusAndRole(event, ParticipantStatus.WAITING_LIST, ParticipantRole.PARTICIPANT))
                 .speakers(event.getSpeakers() == null ? null : event.getSpeakers().stream()
                         .map(s -> MedicalEventDTO.SpeakerDTO.builder()
                                 .id(s.getId())

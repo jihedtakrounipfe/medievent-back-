@@ -36,6 +36,7 @@ public class MedicalEventDTO {
     private Long waitingListCount;
     private List<SpeakerDTO> speakers;
     private List<SpeakerDTO> moderators;
+    private Integer finalParticipantCount;
 
     @Data
     @Builder
