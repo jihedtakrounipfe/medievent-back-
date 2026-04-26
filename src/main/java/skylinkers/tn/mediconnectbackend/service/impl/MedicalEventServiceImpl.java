@@ -21,8 +21,14 @@ import skylinkers.tn.mediconnectbackend.entities.EventParticipant;
 import skylinkers.tn.mediconnectbackend.dto.ParticipantDTO;
 import skylinkers.tn.mediconnectbackend.entities.enums.ParticipantRole;
 import skylinkers.tn.mediconnectbackend.entities.enums.ParticipantStatus;
+import skylinkers.tn.mediconnectbackend.dto.AppNotificationDTO;
+import skylinkers.tn.mediconnectbackend.entities.AppNotification;
+import skylinkers.tn.mediconnectbackend.entities.EventSubscription;
+import skylinkers.tn.mediconnectbackend.repository.AppNotificationRepository;
+import skylinkers.tn.mediconnectbackend.repository.EventSubscriptionRepository;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.time.LocalDateTime;
 @Service
 @RequiredArgsConstructor
 public class MedicalEventServiceImpl implements MedicalEventService {
@@ -30,12 +36,21 @@ public class MedicalEventServiceImpl implements MedicalEventService {
     private final DoctorRepository doctorRepository;
     private final AppUserRepository appUserRepository;
     private final EventParticipantRepository participantRepository;
+    private final EventSubscriptionRepository subscriptionRepository;
+    private final AppNotificationRepository notificationRepository;
     private final EmailService emailService;
     private final org.springframework.kafka.core.KafkaTemplate<String, Object> kafkaTemplate;
     private static final String TOPIC = KafkaConfig.EVENT_PARTICIPATION_TOPIC;
 
     @org.springframework.beans.factory.annotation.Value("${mediconnect.app.frontend-base-url:http://localhost:4200}")
     private String frontendBaseUrl;
+
+    private static final java.time.format.DateTimeFormatter DATE_FMT =
+            java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy 'à' HH:mm");
+
+    private String formatDate(java.time.LocalDateTime dt) {
+        return dt != null ? dt.format(DATE_FMT) : "Date à confirmer";
+    }
     @Override
     @Transactional
     public MedicalEventDTO createEvent(MedicalEventDTO dto, String doctorEmail) {
@@ -134,10 +149,26 @@ public class MedicalEventServiceImpl implements MedicalEventService {
     public void deleteEvent(Long id, String requesterEmail) {
         MedicalEvent event = eventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
-        // Only organizer or admin can delete an event
+        // Only organizer or admin can delete
         if (!event.getOrganizer().getEmail().equalsIgnoreCase(requesterEmail) && !"admin".equals(requesterEmail)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Unauthorized: You are not the organizer");
         }
+
+        // Notify all enrolled participants BEFORE deleting
+        String dateStr = formatDate(event.getEventDate());
+        participantRepository.findByEvent(event).stream()
+                .filter(p -> p.getStatus() == ParticipantStatus.CONFIRMED
+                          || p.getStatus() == ParticipantStatus.WAITING_LIST)
+                .forEach(p -> {
+                    String userName = p.getUser().getFirstName() + " " + p.getUser().getLastName();
+                    emailService.sendEventCancelledEmail(
+                            p.getUser().getEmail(),
+                            userName,
+                            event.getTitle(),
+                            dateStr
+                    );
+                });
+
         eventRepository.delete(event);
     }
 
@@ -168,14 +199,32 @@ public class MedicalEventServiceImpl implements MedicalEventService {
     public void completeEvent(Long id, String organizerEmail, Integer participantCount) {
         MedicalEvent event = eventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
-        
+
         if (!event.getOrganizer().getEmail().equalsIgnoreCase(organizerEmail)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the organizer can complete the event");
         }
-        
+
         event.setStatus(EventStatus.COMPLETED);
         event.setFinalParticipantCount(participantCount);
         eventRepository.save(event);
+
+        // Notify all confirmed participants that the event has started
+        if (!event.isStartedNotificationSent()) {
+            String joinUrl = frontendBaseUrl + "/events/" + event.getId() + "/room";
+            participantRepository.findByEvent(event).stream()
+                    .filter(p -> p.getStatus() == ParticipantStatus.CONFIRMED)
+                    .forEach(p -> {
+                        String userName = p.getUser().getFirstName() + " " + p.getUser().getLastName();
+                        emailService.sendEventStartedEmail(
+                                p.getUser().getEmail(),
+                                userName,
+                                event.getTitle(),
+                                joinUrl
+                        );
+                    });
+            event.setStartedNotificationSent(true);
+            eventRepository.save(event);
+        }
     }
 
     @Override
@@ -266,25 +315,28 @@ public class MedicalEventServiceImpl implements MedicalEventService {
                 .build();
                 
         EventParticipant saved = participantRepository.save(participant);
-        
+
         // Notify user via email
         String userName = user.getFirstName() + " " + user.getLastName();
-        String eventDateStr = event.getEventDate() != null ? event.getEventDate().toString() : "À venir";
-        
+        String eventDateStr = formatDate(event.getEventDate());
+        String eventUrl = frontendBaseUrl + "/events/" + event.getId();
+
         if (targetStatus == ParticipantStatus.CONFIRMED) {
             emailService.sendParticipationConfirmedEmail(
-                    user.getEmail(), 
-                    userName, 
-                    event.getTitle(), 
-                    eventDateStr, 
-                    event.getLocation()
+                    user.getEmail(),
+                    userName,
+                    event.getTitle(),
+                    eventDateStr,
+                    event.getLocation(),
+                    eventUrl
             );
         } else if (targetStatus == ParticipantStatus.WAITING_LIST) {
             emailService.sendParticipationWaitlistEmail(
-                    user.getEmail(), 
-                    userName, 
-                    event.getTitle(), 
-                    eventDateStr
+                    user.getEmail(),
+                    userName,
+                    event.getTitle(),
+                    eventDateStr,
+                    eventUrl
             );
         }
         
@@ -470,6 +522,110 @@ public class MedicalEventServiceImpl implements MedicalEventService {
                                 .profilePicture(m.getProfilePicture())
                                 .build())
                         .collect(Collectors.toList()))
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public void subscribeToEvent(Long eventId, String userEmail) {
+        MedicalEvent event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
+        AppUser user = appUserRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!subscriptionRepository.existsByUserAndEvent(user, event)) {
+            subscriptionRepository.save(EventSubscription.builder().user(user).event(event).build());
+        }
+    }
+
+    @Override
+    @Transactional
+    public void unsubscribeFromEvent(Long eventId, String userEmail) {
+        MedicalEvent event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
+        AppUser user = appUserRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        subscriptionRepository.findByUserAndEvent(user, event)
+                .ifPresent(subscriptionRepository::delete);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isSubscribed(Long eventId, String userEmail) {
+        MedicalEvent event = eventRepository.findById(eventId).orElse(null);
+        AppUser user = appUserRepository.findByEmail(userEmail).orElse(null);
+        if (event == null || user == null) return false;
+        return subscriptionRepository.existsByUserAndEvent(user, event);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AppNotificationDTO> getMyNotifications(String userEmail) {
+        AppUser user = appUserRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        return notificationRepository.findByUserOrderByCreatedAtDesc(user).stream()
+                .map(this::mapToNotificationDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void markNotificationAsRead(Long notificationId, String userEmail) {
+        AppNotification notif = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Notification not found"));
+        if (!notif.getUser().getEmail().equals(userEmail)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        notif.setRead(true);
+    }
+
+    @Override
+    @Transactional
+    public void clearNotifications(String userEmail) {
+        AppUser user = appUserRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        List<AppNotification> list = notificationRepository.findByUserOrderByCreatedAtDesc(user);
+        notificationRepository.deleteAll(list);
+    }
+
+    @Override
+    @Transactional
+    public void notifySubscribers(Long eventId) {
+        if (this.hasAlreadyNotified(eventId)) return;
+
+        MedicalEvent event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
+        
+        List<EventSubscription> subs = subscriptionRepository.findByEvent(event);
+        for (EventSubscription sub : subs) {
+            AppNotification notif = AppNotification.builder()
+                    .user(sub.getUser())
+                    .eventId(event.getId())
+                    .title("🔴 Direct commencé !")
+                    .message("\"" + event.getTitle() + "\" est en direct maintenant. Cliquez pour rejoindre.")
+                    .type("live_started")
+                    .createdAt(LocalDateTime.now())
+                    .read(false)
+                    .build();
+            notificationRepository.save(notif);
+        }
+    }
+
+    @Override
+    public boolean hasAlreadyNotified(Long eventId) {
+        return notificationRepository.existsByEventIdAndType(eventId, "live_started");
+    }
+
+    private AppNotificationDTO mapToNotificationDTO(AppNotification n) {
+        return AppNotificationDTO.builder()
+                .id(n.getId())
+                .title(n.getTitle())
+                .message(n.getMessage())
+                .eventId(n.getEventId())
+                .type(n.getType())
+                .timestamp(n.getCreatedAt())
+                .isRead(n.isRead())
                 .build();
     }
 }

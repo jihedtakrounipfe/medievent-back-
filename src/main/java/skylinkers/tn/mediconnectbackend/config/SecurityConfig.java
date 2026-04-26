@@ -41,6 +41,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
                                 "/api/auth/**",
+                                "/api/dev/**",
                                 "/api/v1/events/**",
                                 "/api/v1/stream/**",
                                 "/api/files/**",

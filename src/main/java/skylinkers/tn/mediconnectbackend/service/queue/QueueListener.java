@@ -25,6 +25,12 @@ public class QueueListener {
     private final MedicalEventRepository eventRepository;
     private final EmailService emailService;
 
+    @org.springframework.beans.factory.annotation.Value("${mediconnect.app.frontend-base-url:http://localhost:4200}")
+    private String frontendBaseUrl;
+
+    private static final java.time.format.DateTimeFormatter DATE_FMT =
+            java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy '\u00e0' HH:mm");
+
     @KafkaListener(topics = KafkaConfig.EVENT_PARTICIPATION_TOPIC, groupId = "mediconnect-group")
     @Transactional
     public void processParticipationEvent(ParticipationEvent event) {
@@ -47,19 +53,22 @@ public class QueueListener {
             nextInLine.ifPresent(participant -> {
                 participant.setStatus(ParticipantStatus.CONFIRMED);
                 participantRepository.save(participant);
-                
+
                 log.info("User {} promoted from waiting list for event {}", participant.getUser().getEmail(), eventId);
-                
+
                 // Notify user via premium email
                 String userName = participant.getUser().getFirstName() + " " + participant.getUser().getLastName();
-                String eventDateStr = medicalEvent.getEventDate() != null ? medicalEvent.getEventDate().toString() : "À venir";
-                
+                String eventDateStr = medicalEvent.getEventDate() != null
+                        ? medicalEvent.getEventDate().format(DATE_FMT) : "Date à confirmer";
+                String eventUrl = frontendBaseUrl + "/events/" + eventId;
+
                 emailService.sendParticipationPromotedEmail(
                         participant.getUser().getEmail(),
                         userName,
                         medicalEvent.getTitle(),
                         eventDateStr,
-                        medicalEvent.getLocation()
+                        medicalEvent.getLocation(),
+                        eventUrl
                 );
             });
         }

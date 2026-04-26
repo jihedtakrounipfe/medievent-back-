@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @lombok.RequiredArgsConstructor
 public class StreamSignalController {
     private final skylinkers.tn.mediconnectbackend.repository.MedicalEventRepository eventRepository;
+    private final skylinkers.tn.mediconnectbackend.service.MedicalEventService eventService;
 
     private static final long STALE_TIMEOUT_MS = 15000; // 15 seconds
 
@@ -51,7 +52,20 @@ public class StreamSignalController {
     public ResponseEntity<Object> registerHost(@PathVariable String eventId, @RequestBody Map<String, String> body) {
         String peerId = body.get("peerId");
         if (peerId == null || peerId.isBlank()) return ResponseEntity.badRequest().build();
+        
         hostSessions.computeIfAbsent(eventId, k -> new ConcurrentHashMap<>()).put(peerId, System.currentTimeMillis());
+
+        // Trigger notifications if not already sent
+        try {
+            Long id = Long.parseLong(eventId);
+            if (!eventService.hasAlreadyNotified(id)) {
+                eventService.notifySubscribers(id);
+                log.info("[STREAM] Subscribers notified for live event {}", eventId);
+            }
+        } catch (Exception e) {
+            log.error("[STREAM] Error triggering notifications: {}", e.getMessage());
+        }
+
         return ResponseEntity.ok(Map.of("message", "Host heartbeat"));
     }
 

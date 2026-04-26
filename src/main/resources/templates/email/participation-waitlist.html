@@ -1,59 +1,72 @@
 <!doctype html>
 <html lang="fr" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Inscription en Liste d'Attente</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Liste d'Attente</title>
 </head>
-<body style="margin:0;padding:0;background:#f8fafc;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f8fafc;padding:40px 0;">
-    <tr>
-        <td align="center">
-            <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.05);border:1px solid #e2e8f0;">
-                <!-- Header -->
-                <tr>
-                    <td style="padding:40px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#ffffff;text-align:center;">
-                        <div style="font-size:12px;font-weight:800;letter-spacing:4px;text-transform:uppercase;opacity:0.8;margin-bottom:12px;">MediConnect Events</div>
-                        <h1 style="margin:0;font-size:28px;font-weight:800;letter-spacing:-0.5px;">Liste d'Attente ⏳</h1>
-                    </td>
-                </tr>
-                <!-- Content -->
-                <tr>
-                    <td style="padding:40px;color:#1e293b;">
-                        <p style="margin:0 0 20px 0;font-size:16px;line-height:1.6;">
-                            Bonjour <strong th:text="${userName}">Utilisateur</strong>,
-                        </p>
-                        <p style="margin:0 0 24px 0;font-size:16px;line-height:1.6;color:#475569;">
-                            L'événement est actuellement complet. Vous avez été inscrit sur la <strong>Liste d'Attente</strong>.
-                        </p>
+<body style="margin:0;padding:0;background:#fffbeb;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#fffbeb;padding:40px 0;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 12px 40px rgba(245,158,11,0.12);border:1px solid #fde68a;">
 
-                        <div style="background:#fff7ed;border:1px solid #ffedd5;border-radius:16px;padding:24px;margin-bottom:30px;">
-                            <p style="margin:0;font-size:14px;line-height:1.6;color:#92400e;">
-                                💡 <strong>Comment ça marche ?</strong> Si un participant se désiste, le système vous déplacera automatiquement vers la liste principale. Vous recevrez alors un nouvel email de confirmation.
-                            </p>
-                        </div>
+        <!-- Header -->
+        <tr>
+          <td style="padding:44px 40px;background:linear-gradient(135deg,#d97706 0%,#b45309 100%);color:#ffffff;text-align:center;">
+            <div style="font-size:11px;font-weight:900;letter-spacing:4px;text-transform:uppercase;opacity:0.75;margin-bottom:14px;">MediConnect Events</div>
+            <div style="font-size:52px;margin-bottom:12px;">⏳</div>
+            <h1 style="margin:0;font-size:28px;font-weight:800;letter-spacing:-0.5px;">En Liste d'Attente</h1>
+            <p style="margin:10px 0 0;font-size:15px;opacity:0.85;">Vous serez promu automatiquement si une place se libère</p>
+          </td>
+        </tr>
 
-                        <!-- Event Info -->
-                        <div style="background:#f1f5f9;border-radius:16px;padding:24px;margin-bottom:30px;">
-                            <div style="font-size:13px;font-weight:700;color:#d97706;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Événement concerné</div>
-                            <h2 style="margin:0 0 12px 0;font-size:20px;font-weight:800;color:#0f172a;" th:text="${eventTitle}">Titre de l'événement</h2>
-                            <div style="font-size:15px;color:#64748b;">
-                                📅 <span th:text="${eventDate}">Date et Heure</span>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-                <!-- Footer -->
-                <tr>
-                    <td style="padding:24px;background:#f8fafc;border-top:1px solid #e2e8f0;text-align:center;">
-                        <p style="margin:0;font-size:12px;color:#94a3b8;">
-                            © 2026 MediConnect — La santé pour tous, accessible à tous.
-                        </p>
-                    </td>
-                </tr>
-            </table>
-        </td>
-    </tr>
+        <!-- Content -->
+        <tr>
+          <td style="padding:40px;">
+            <p style="margin:0 0 8px 0;font-size:15px;color:#475569;">Bonjour,</p>
+            <h2 style="margin:0 0 24px 0;font-size:20px;font-weight:800;color:#0f172a;" th:text="${userName}">Utilisateur</h2>
+
+            <p style="margin:0 0 28px 0;font-size:15px;line-height:1.7;color:#475569;">
+              Votre inscription a bien été enregistrée ! L'événement affiche complet pour le moment, mais vous avez été placé sur la <strong style="color:#d97706;">liste d'attente</strong>. Si une place se libère, vous serez automatiquement promu — et vous recevrez un email immédiatement.
+            </p>
+
+            <!-- Event Card -->
+            <div style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1.5px solid #fcd34d;border-radius:18px;padding:28px;margin-bottom:32px;">
+              <div style="font-size:11px;font-weight:900;letter-spacing:3px;text-transform:uppercase;color:#d97706;margin-bottom:10px;">📅 Détails de l'événement</div>
+              <h2 style="margin:0 0 18px 0;font-size:22px;font-weight:800;color:#0f172a;line-height:1.3;" th:text="${eventTitle}">Titre de l'événement</h2>
+              <div style="font-size:14px;color:#374151;">🕐 <span th:text="${eventDate}">Date et Heure</span></div>
+            </div>
+
+            <!-- Info box -->
+            <div style="background:#fef9ee;border-left:4px solid #f59e0b;border-radius:0 12px 12px 0;padding:16px 20px;margin-bottom:32px;">
+              <p style="margin:0;font-size:14px;color:#92400e;line-height:1.6;">
+                💡 <strong>Aucune action requise.</strong> Votre position sur la liste d'attente est gérée automatiquement selon l'ordre d'inscription.
+              </p>
+            </div>
+
+            <!-- CTA -->
+            <div style="text-align:center;margin-bottom:32px;">
+              <a th:href="${eventUrl}" style="display:inline-block;padding:16px 44px;background:linear-gradient(135deg,#d97706,#b45309);color:#ffffff;text-decoration:none;border-radius:14px;font-size:15px;font-weight:800;letter-spacing:0.03em;box-shadow:0 8px 24px rgba(217,119,6,0.35);">
+                Voir l'événement →
+              </a>
+            </div>
+
+            <p style="margin:0;font-size:13px;line-height:1.6;color:#94a3b8;text-align:center;">
+              Si le bouton ne fonctionne pas : <span th:text="${eventUrl}" style="color:#d97706;"></span>
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:20px 40px;background:#f8fafc;border-top:1px solid #e2e8f0;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#94a3b8;">© 2026 MediConnect — La santé pour tous, accessible à tous.</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
 </table>
 </body>
 </html>

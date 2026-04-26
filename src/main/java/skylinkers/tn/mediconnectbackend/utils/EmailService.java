@@ -140,47 +140,66 @@ public class EmailService {
     }
 
     @Async
-    public void sendParticipationConfirmedEmail(String to, String userName, String eventTitle, String eventDate, String eventLocation) {
+    public void sendParticipationConfirmedEmail(String to, String userName, String eventTitle, String eventDate, String eventLocation, String eventUrl) {
         sendHtmlEmail(to, "✅ Inscription Confirmée : " + eventTitle, "participation-confirmed.html", Map.of(
                 "userName", userName,
                 "eventTitle", eventTitle,
                 "eventDate", eventDate,
-                "eventLocation", eventLocation
+                "eventLocation", eventLocation == null ? "En ligne" : eventLocation,
+                "eventUrl", eventUrl
         ));
     }
 
     @Async
-    public void sendParticipationWaitlistEmail(String to, String userName, String eventTitle, String eventDate) {
-        sendHtmlEmail(to, "⏳ Inscription en Liste d'Attente : " + eventTitle, "participation-waitlist.html", Map.of(
+    public void sendParticipationWaitlistEmail(String to, String userName, String eventTitle, String eventDate, String eventUrl) {
+        sendHtmlEmail(to, "⏳ En Liste d'Attente : " + eventTitle, "participation-waitlist.html", Map.of(
+                "userName", userName,
+                "eventTitle", eventTitle,
+                "eventDate", eventDate,
+                "eventUrl", eventUrl
+        ));
+    }
+
+    @Async
+    public void sendParticipationPromotedEmail(String to, String userName, String eventTitle, String eventDate, String eventLocation, String eventUrl) {
+        sendHtmlEmail(to, "🌟 Place Confirmée : " + eventTitle, "participation-promoted.html", Map.of(
+                "userName", userName,
+                "eventTitle", eventTitle,
+                "eventDate", eventDate,
+                "eventLocation", eventLocation == null ? "En ligne" : eventLocation,
+                "eventUrl", eventUrl
+        ));
+    }
+
+    // ── NEW: Event cancelled — notify all enrolled participants ───────────────
+    @Async
+    public void sendEventCancelledEmail(String to, String userName, String eventTitle, String eventDate) {
+        sendHtmlEmail(to, "❌ Événement annulé : " + eventTitle, "event-cancelled.html", Map.of(
                 "userName", userName,
                 "eventTitle", eventTitle,
                 "eventDate", eventDate
         ));
     }
 
+    // ── NEW: 30-minute pre-event reminder ─────────────────────────────────────
     @Async
-    public void sendParticipationPromotedEmail(String to, String userName, String eventTitle, String eventDate, String eventLocation) {
-        sendHtmlEmail(to, "🌟 Bonne Nouvelle : Votre place est confirmée pour " + eventTitle, "participation-promoted.html", Map.of(
+    public void sendEventReminderEmail(String to, String userName, String eventTitle, String eventDate, String eventUrl) {
+        sendHtmlEmail(to, "⏰ Rappel : " + eventTitle + " commence dans 30 min !", "event-reminder.html", Map.of(
                 "userName", userName,
                 "eventTitle", eventTitle,
                 "eventDate", eventDate,
-                "eventLocation", eventLocation
+                "eventUrl", eventUrl
         ));
     }
 
+    // ── NEW: Event has started — join now ─────────────────────────────────────
     @Async
-    public void sendDoctorApprovalEmail(String to, String doctorName) {
-        sendDoctorApprovedEmail(to, doctorName);
-    }
-
-    @Async
-    public void sendDoctorRejectionEmail(String to, String doctorName, String reason) {
-        sendDoctorRejectedEmail(to, doctorName, reason);
-    }
-
-    @Async
-    public void sendEmail(String to, String subject, String templateName, Map<String, Object> variables) {
-        sendHtmlEmail(to, subject, templateName, variables);
+    public void sendEventStartedEmail(String to, String userName, String eventTitle, String eventUrl) {
+        sendHtmlEmail(to, "🚀 C'est parti ! " + eventTitle + " vient de commencer", "event-started.html", Map.of(
+                "userName", userName,
+                "eventTitle", eventTitle,
+                "eventUrl", eventUrl
+        ));
     }
 
     private boolean isMailConfigured() {

@@ -31,7 +31,7 @@ class EmailServiceTest {
         ReflectionTestUtils.setField(svc, "fromName", "MediConnect");
         ReflectionTestUtils.setField(svc, "fromAddress", "noreply@mediconnect.tn");
 
-        svc.sendEmail("a@b.com", "sub", "welcome.html", Map.of("firstName", "A"));
+        svc.sendHtmlEmail("a@b.com", "sub", "welcome.html", Map.of("firstName", "A"));
 
         verify(templateEngine, times(1)).process(eq("email/welcome.html"), any());
         verify(mailSender, times(1)).send(any(MimeMessage.class));

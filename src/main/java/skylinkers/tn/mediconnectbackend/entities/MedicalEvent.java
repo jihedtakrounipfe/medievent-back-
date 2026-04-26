@@ -108,4 +108,14 @@ public class MedicalEvent {
     @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    /** True once the 30-minute pre-event reminder has been dispatched. */
+    @Column(name = "reminder_sent", nullable = false)
+    @lombok.Builder.Default
+    private boolean reminderSent = false;
+
+    /** True once the "event has started" notification has been dispatched. */
+    @Column(name = "started_notification_sent", nullable = false)
+    @lombok.Builder.Default
+    private boolean startedNotificationSent = false;
 }

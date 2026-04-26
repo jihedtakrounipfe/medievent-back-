@@ -77,7 +77,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleAny(Exception ex, HttpServletRequest req) {
         log.error("Unhandled error", ex);
-        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error", req.getRequestURI(), null);
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error: " + ex.getClass().getSimpleName() + " - " + ex.getMessage(), req.getRequestURI(), null);
     }
 
     private ResponseEntity<ApiError> build(HttpStatus status, String message, String path, Object details) {
