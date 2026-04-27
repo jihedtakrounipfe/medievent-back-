@@ -101,6 +101,11 @@ public class ParticipantEventController {
         return ResponseEntity.ok(eventService.getMyParticipations(jwt.getClaimAsString("email")));
     }
 
+    @GetMapping("/recommended")
+    public ResponseEntity<List<MedicalEventDTO>> getRecommendedEvents(@AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(eventService.getRecommendedEvents(jwt.getClaimAsString("email")));
+    }
+
     @DeleteMapping("/{eventId}/cancel")
     public ResponseEntity<Void> cancelParticipation(@PathVariable Long eventId, @AuthenticationPrincipal Jwt jwt) {
         eventService.cancelParticipation(eventId, jwt.getClaimAsString("email"));

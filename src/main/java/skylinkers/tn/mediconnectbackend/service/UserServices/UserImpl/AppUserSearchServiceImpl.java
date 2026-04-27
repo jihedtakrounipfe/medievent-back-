@@ -140,7 +140,8 @@ public class AppUserSearchServiceImpl implements IAppUserSearchService {
                 .isActive(user.isActive())
                 .isVerified(user.getIsVerified())
                 .profilePicture(user.getProfilePicture())
-                .createdAt(user.getCreatedAt());
+                .createdAt(user.getCreatedAt())
+                .interests(user.getInterests());
 
         // Subtype-specific fields via discriminated cast
         if (user instanceof Doctor doctor) {

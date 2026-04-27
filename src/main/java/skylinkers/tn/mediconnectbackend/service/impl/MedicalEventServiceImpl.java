@@ -17,7 +17,9 @@ import skylinkers.tn.mediconnectbackend.service.MedicalEventService;
 import skylinkers.tn.mediconnectbackend.utils.EmailService;
 import skylinkers.tn.mediconnectbackend.config.KafkaConfig;
 import skylinkers.tn.mediconnectbackend.entities.AppUser;
+import skylinkers.tn.mediconnectbackend.entities.Patient;
 import skylinkers.tn.mediconnectbackend.entities.EventParticipant;
+import skylinkers.tn.mediconnectbackend.entities.enums.EventAudience;
 import skylinkers.tn.mediconnectbackend.dto.ParticipantDTO;
 import skylinkers.tn.mediconnectbackend.entities.enums.ParticipantRole;
 import skylinkers.tn.mediconnectbackend.entities.enums.ParticipantStatus;
@@ -96,6 +98,7 @@ public class MedicalEventServiceImpl implements MedicalEventService {
                         .map(m -> doctorRepository.findById(m.getId()).orElse(null))
                         .filter(java.util.Objects::nonNull)
                         .collect(Collectors.toList()) : new java.util.ArrayList<>())
+                .tags(dto.getTags() != null ? dto.getTags() : new java.util.HashSet<>())
                 .build();
         MedicalEvent saved = eventRepository.save(event);
         
@@ -150,6 +153,7 @@ public class MedicalEventServiceImpl implements MedicalEventService {
         event.setSpeakerBio(dto.getSpeakerBio());
         event.setAgenda(dto.getAgenda());
         event.setBannerUrl(dto.getBannerUrl());
+        if (dto.getTags() != null) event.setTags(dto.getTags());
         if (dto.getMaxParticipants() != null) event.setMaxParticipants(dto.getMaxParticipants());
         if (dto.getSpeakers() != null) {
             event.setSpeakers(dto.getSpeakers().stream()
@@ -378,6 +382,40 @@ public class MedicalEventServiceImpl implements MedicalEventService {
     public List<MedicalEventDTO> getAllEventsForAdmin() {
         return eventRepository.findAll()
                 .stream().map(this::mapToDTO).collect(Collectors.toList());
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<MedicalEventDTO> getRecommendedEvents(String userEmail) {
+        AppUser user = appUserRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        java.util.Set<String> userInterests = user.getInterests() != null ? user.getInterests() : new java.util.HashSet<>();
+        
+        List<MedicalEvent> allEvents = eventRepository.findAllByStatus(EventStatus.APPROVED);
+        
+        return allEvents.stream()
+                .filter(e -> e.getEventDate() != null && e.getEventDate().isAfter(LocalDateTime.now()))
+                .map(event -> {
+                    int score = 0;
+                    if (event.getTags() != null) {
+                        for (String tag : event.getTags()) {
+                            if (userInterests.contains(tag)) score += 10;
+                        }
+                    }
+                    if (user instanceof Doctor doc) {
+                        if (doc.getSpecialization() != null && doc.getSpecialization().equals(event.getSpecialization())) {
+                            score += 15;
+                        }
+                    } else if (user instanceof Patient pat) {
+                        if (event.getTargetAudience() == EventAudience.PUBLIC || event.getTargetAudience() == EventAudience.PATIENTS) {
+                            score += 5;
+                        }
+                    }
+                    return new java.util.AbstractMap.SimpleEntry<>(event, score);
+                })
+                .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue())) // Descending
+                .map(entry -> mapToDTO(entry.getKey()))
+                .collect(Collectors.toList());
     }
     @Override
     @Transactional
@@ -663,6 +701,7 @@ public class MedicalEventServiceImpl implements MedicalEventService {
                                 .profilePicture(m.getProfilePicture())
                                 .build())
                         .collect(Collectors.toList()))
+                .tags(event.getTags())
                 .build();
     }
 

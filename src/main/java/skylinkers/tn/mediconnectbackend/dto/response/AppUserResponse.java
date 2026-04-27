@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.util.Set;
 
 /**
  * Lightweight projection used in search results — no sensitive fields.
@@ -24,6 +25,7 @@ public class AppUserResponse {
     private Boolean       isActive;
     private String        profilePicture;
     private LocalDateTime createdAt;
+    private Set<String>   interests;
 
     // Doctor-specific — null for patients
     private String  specialization;

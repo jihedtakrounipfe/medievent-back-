@@ -14,6 +14,8 @@ import skylinkers.tn.mediconnectbackend.entities.enums.EventStatus;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Set;
+import java.util.HashSet;
 
 @Entity
 @Table(name = "medical_events")
@@ -118,4 +120,10 @@ public class MedicalEvent {
     @Column(name = "started_notification_sent", nullable = false)
     @lombok.Builder.Default
     private boolean startedNotificationSent = false;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "event_tags", joinColumns = @JoinColumn(name = "event_id"))
+    @Column(name = "tag")
+    @Builder.Default
+    private Set<String> tags = new HashSet<>();
 }

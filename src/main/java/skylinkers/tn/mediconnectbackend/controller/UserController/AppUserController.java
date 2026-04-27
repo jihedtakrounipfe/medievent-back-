@@ -14,6 +14,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import skylinkers.tn.mediconnectbackend.repository.UserRepositories.AppUserRepository;
+import skylinkers.tn.mediconnectbackend.entities.AppUser;
+import java.util.Set;
 
 /**
  * Cross-entity user search + "who am I" resolution.
@@ -33,8 +36,8 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
 public class AppUserController {
-
     private final IAppUserSearchService searchService;
+    private final AppUserRepository userRepository;
 
     /**
      * GET /api/v1/users/search
@@ -84,5 +87,15 @@ public class AppUserController {
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<AppUserResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(searchService.getById(id));
+    }
+
+    @PutMapping("/interests")
+    public ResponseEntity<Void> updateInterests(@AuthenticationPrincipal Jwt jwt, @RequestBody Set<String> interests) {
+        if (jwt == null) return ResponseEntity.status(401).build();
+        AppUser user = userRepository.findByKeycloakId(jwt.getSubject())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setInterests(interests);
+        userRepository.save(user);
+        return ResponseEntity.ok().build();
     }
 }

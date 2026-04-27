@@ -61,6 +61,7 @@ public class DoctorMapper {
                 .isActive(d.isActive())
                 .profilePicture(d.getProfilePicture())
                 .createdAt(d.getCreatedAt())
+                .interests(d.getInterests())
                 .build();
     }
 

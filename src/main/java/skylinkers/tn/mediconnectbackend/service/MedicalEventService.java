@@ -18,6 +18,7 @@ public interface MedicalEventService {
     List<MedicalEventDTO> getMyEvents(String doctorEmail);
     List<MedicalEventDTO> getEventsByStatus(EventStatus status);
     List<MedicalEventDTO> getAllEventsForAdmin();
+    List<MedicalEventDTO> getRecommendedEvents(String userEmail);
     
     MedicalEventDTO approveEvent(Long id);
     MedicalEventDTO rejectEvent(Long id, String reason);
