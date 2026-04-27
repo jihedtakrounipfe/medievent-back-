@@ -407,7 +407,7 @@ public class MedicalEventServiceImpl implements MedicalEventService {
                             score += 15;
                         }
                     } else if (user instanceof Patient pat) {
-                        if (event.getTargetAudience() == EventAudience.PUBLIC || event.getTargetAudience() == EventAudience.PATIENTS) {
+                        if (event.getTargetAudience() == EventAudience.PUBLIC) {
                             score += 5;
                         }
                     }
