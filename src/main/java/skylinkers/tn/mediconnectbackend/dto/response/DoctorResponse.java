@@ -40,5 +40,6 @@ public class DoctorResponse {
     private boolean isActive;
     private String profilePicture;
     private LocalDateTime createdAt;
+    private java.util.Set<String> interests;
 }
 
