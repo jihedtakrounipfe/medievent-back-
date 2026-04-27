@@ -171,6 +171,16 @@ public class EmailService {
         ));
     }
 
+    @Async
+    public void sendEventUpdatedEmail(String to, String userName, String eventTitle, String eventDate, String eventUrl) {
+        sendHtmlEmail(to, "🔄 Mise à jour : " + eventTitle, "event-updated.html", Map.of(
+                "userName", userName,
+                "eventTitle", eventTitle,
+                "eventDate", eventDate,
+                "eventUrl", eventUrl
+        ));
+    }
+
     // ── NEW: Event cancelled — notify all enrolled participants ───────────────
     @Async
     public void sendEventCancelledEmail(String to, String userName, String eventTitle, String eventDate) {

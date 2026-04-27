@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mise à jour d'événement</title>
+</head>
+<body style="margin:0;padding:0;background:#f8fafc;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f8fafc;padding:40px 0;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,0.08);">
+
+        <!-- Header -->
+        <tr>
+          <td style="padding:40px;background:linear-gradient(135deg,#6366f1 0%,#4f46e5 100%);color:#ffffff;text-align:center;">
+            <div style="font-size:11px;font-weight:900;letter-spacing:4px;text-transform:uppercase;opacity:0.8;margin-bottom:12px;">MediConnect Notifications</div>
+            <div style="font-size:48px;margin-bottom:16px;">🔄</div>
+            <h1 style="margin:0;font-size:26px;font-weight:800;letter-spacing:-0.5px;">Mise à jour d'événement</h1>
+          </td>
+        </tr>
+
+        <!-- Content -->
+        <tr>
+          <td style="padding:40px;color:#1e293b;">
+            <p style="margin:0 0 8px 0;font-size:15px;color:#64748b;">Bonjour,</p>
+            <h2 style="margin:0 0 24px 0;font-size:20px;font-weight:800;color:#0f172a;" th:text="${userName}">Utilisateur</h2>
+
+            <p style="margin:0 0 28px 0;font-size:15px;line-height:1.7;color:#475569;">
+              Nous vous informons que les détails de l'événement médical <strong style="color:#4f46e5;" th:text="${eventTitle}">Titre</strong> ont été modifiés.
+              Veuillez vérifier les nouvelles informations ci-dessous.
+            </p>
+
+            <!-- Info Card -->
+            <div style="background:#f1f5f9;border-radius:18px;padding:28px;margin-bottom:32px;">
+              <div style="margin-bottom:16px;">
+                 <div style="font-size:11px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:#6366f1;margin-bottom:4px;">📅 Nouvelle Date / Heure</div>
+                 <div style="font-size:16px;font-weight:700;color:#0f172a;" th:text="${eventDate}">Date de l'événement</div>
+              </div>
+            </div>
+
+            <!-- CTA -->
+            <div style="text-align:center;margin-bottom:32px;">
+              <a th:href="${eventUrl}" style="display:inline-block;padding:18px 48px;background:#4f46e5;color:#ffffff;text-decoration:none;border-radius:12px;font-size:16px;font-weight:800;letter-spacing:0.02em;box-shadow:0 10px 25px rgba(79,70,229,0.3);">
+                Consulter les détails mis à jour
+              </a>
+            </div>
+
+            <p style="margin:0;font-size:13px;line-height:1.6;color:#64748b;text-align:center;">
+              Vous recevez cet email car vous êtes inscrit ou abonné à cet événement.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:20px 40px;background:#f8fafc;border-top:1px solid #e2e8f0;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#94a3b8;">© 2026 MediConnect — Plateforme médicale professionnelle.</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

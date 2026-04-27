@@ -37,7 +37,7 @@ public class MedicalEvent {
     @Column(nullable = false)
     private LocalDateTime eventDate;
 
-    @Column(length = 255)
+    @Column(length = 1000)
     private String location;
 
     @Enumerated(EnumType.STRING)

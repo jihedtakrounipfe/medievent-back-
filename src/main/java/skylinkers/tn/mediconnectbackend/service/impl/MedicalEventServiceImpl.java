@@ -26,9 +26,11 @@ import skylinkers.tn.mediconnectbackend.entities.AppNotification;
 import skylinkers.tn.mediconnectbackend.entities.EventSubscription;
 import skylinkers.tn.mediconnectbackend.repository.AppNotificationRepository;
 import skylinkers.tn.mediconnectbackend.repository.EventSubscriptionRepository;
+import lombok.extern.slf4j.Slf4j;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.time.LocalDateTime;
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MedicalEventServiceImpl implements MedicalEventService {
@@ -54,6 +56,7 @@ public class MedicalEventServiceImpl implements MedicalEventService {
     @Override
     @Transactional
     public MedicalEventDTO createEvent(MedicalEventDTO dto, String doctorEmail) {
+        log.info("[CREATE-EVENT] Doctor: {}, DTO: {}", doctorEmail, dto);
         Doctor doctor = doctorRepository.findByEmail(doctorEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
 
@@ -65,11 +68,17 @@ public class MedicalEventServiceImpl implements MedicalEventService {
             throw new IllegalArgumentException("Vous avez déjà une conférence prévue à ce créneau horaire (intervalle de 1h)");
         }
 
+        // Truncate location if it exceeds 255 characters (limit of typical DB column)
+        String location = dto.getLocation();
+        if (location != null && location.length() > 255) {
+            location = location.substring(0, 252) + "...";
+        }
+
         MedicalEvent event = MedicalEvent.builder()
                 .title(dto.getTitle())
                 .description(dto.getDescription())
                 .eventDate(dto.getEventDate())
-                .location(dto.getLocation())
+                .location(location)
                 .targetAudience(dto.getTargetAudience())
                 .specialization(dto.getSpecialization())
                 .speakerName(dto.getSpeakerName())
@@ -118,10 +127,23 @@ public class MedicalEventServiceImpl implements MedicalEventService {
         if (!event.getOrganizer().getEmail().equalsIgnoreCase(doctorEmail)) {
             throw new RuntimeException("Unauthorized: You are not the organizer");
         }
+        // Guard: a COMPLETED event is archived and cannot be modified
+        if (event.getStatus() == EventStatus.COMPLETED) {
+            throw new ResponseStatusException(
+                org.springframework.http.HttpStatus.BAD_REQUEST,
+                "Cet événement est terminé et ne peut plus être modifié."
+            );
+        }
+        // Truncate location if it exceeds 255 characters
+        String newLoc = dto.getLocation();
+        if (newLoc != null && newLoc.length() > 255) {
+            newLoc = newLoc.substring(0, 252) + "...";
+        }
+
         event.setTitle(dto.getTitle());
         event.setDescription(dto.getDescription());
         event.setEventDate(dto.getEventDate());
-        event.setLocation(dto.getLocation());
+        event.setLocation(newLoc);
         event.setTargetAudience(dto.getTargetAudience());
         event.setSpecialization(dto.getSpecialization());
         event.setSpeakerName(dto.getSpeakerName());
@@ -141,16 +163,95 @@ public class MedicalEventServiceImpl implements MedicalEventService {
                     .filter(java.util.Objects::nonNull)
                     .collect(Collectors.toList()));
         }
-        event.setStatus(EventStatus.APPROVED); // Auto-approved on update
-        return mapToDTO(eventRepository.save(event));
+        // CRITICAL FIX: Never downgrade a COMPLETED event back to APPROVED.
+        // Only set APPROVED if the event wasn't already completed.
+        if (event.getStatus() != EventStatus.COMPLETED) {
+            event.setStatus(EventStatus.APPROVED);
+        }
+
+        MedicalEvent saved = eventRepository.save(event);
+
+        // MODIFICATION: Notify subscribers and participants of the update
+        String updateMsg = "L'événement \"" + saved.getTitle() + "\" a été mis à jour.";
+        
+        log.info("[NOTIF-TRACE] Starting notification process for Event ID: {}", saved.getId());
+
+        // 1. Notify the Organizer (Self-notification for testing)
+        notificationRepository.save(AppNotification.builder()
+            .user(saved.getOrganizer())
+            .eventId(saved.getId())
+            .title("Mise à jour (Vous)")
+            .message("Vous avez mis à jour l'événement: " + saved.getTitle())
+            .type("info")
+            .createdAt(LocalDateTime.now())
+            .read(false)
+            .build());
+
+        // 2. Notify subscribers
+        List<EventSubscription> subs = subscriptionRepository.findByEvent(saved);
+        log.info("[NOTIF-TRACE] Found {} subscribers for this event", subs.size());
+        
+        subs.forEach(s -> {
+            log.info("[NOTIF-TRACE] Notifying subscriber: {}", s.getUser().getEmail());
+            notificationRepository.save(AppNotification.builder()
+                .user(s.getUser())
+                .eventId(saved.getId())
+                .title("Mise à jour d'événement")
+                .message(updateMsg)
+                .type("info")
+                .createdAt(LocalDateTime.now())
+                .read(false)
+                .build());
+            
+            emailService.sendEventUpdatedEmail(
+                s.getUser().getEmail(),
+                s.getUser().getFirstName() + " " + s.getUser().getLastName(),
+                saved.getTitle(),
+                formatDate(saved.getEventDate()),
+                frontendBaseUrl + "/events/" + saved.getId()
+            );
+        });
+
+        // 3. Notify confirmed participants
+        List<EventParticipant> participants = participantRepository.findByEvent(saved).stream()
+            .filter(p -> p.getStatus() == ParticipantStatus.CONFIRMED)
+            .collect(Collectors.toList());
+        log.info("[NOTIF-TRACE] Found {} confirmed participants for this event", participants.size());
+
+        participants.forEach(p -> {
+                log.info("[NOTIF-TRACE] Notifying participant: {}", p.getUser().getEmail());
+                notificationRepository.save(AppNotification.builder()
+                    .user(p.getUser())
+                    .eventId(saved.getId())
+                    .title("Mise à jour d'événement")
+                    .message(updateMsg)
+                    .type("info")
+                    .createdAt(LocalDateTime.now())
+                    .read(false)
+                    .build());
+
+                emailService.sendEventUpdatedEmail(
+                    p.getUser().getEmail(),
+                    p.getUser().getFirstName() + " " + p.getUser().getLastName(),
+                    saved.getTitle(),
+                    formatDate(saved.getEventDate()),
+                    frontendBaseUrl + "/events/" + saved.getId()
+                );
+            });
+
+        return mapToDTO(saved);
     }
     @Override
     @Transactional
     public void deleteEvent(Long id, String requesterEmail) {
         MedicalEvent event = eventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
-        // Only organizer or admin can delete
-        if (!event.getOrganizer().getEmail().equalsIgnoreCase(requesterEmail) && !"admin".equals(requesterEmail)) {
+        // Check if requester is organizer OR a real admin user in the database
+        boolean isOrganizer = event.getOrganizer().getEmail().equalsIgnoreCase(requesterEmail);
+        boolean isAdmin = appUserRepository.findByEmail(requesterEmail)
+                .map(u -> "ADMIN".equalsIgnoreCase(u.getUserType() != null ? u.getUserType().name() : ""))
+                .orElse(false);
+        if (!isOrganizer && !isAdmin) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Unauthorized: You are not the organizer");
         }
 
@@ -182,6 +283,11 @@ public class MedicalEventServiceImpl implements MedicalEventService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the organizer can add speakers");
         }
         
+        // MODIFICATION: Block adding speakers to COMPLETED events
+        if (event.getStatus() == EventStatus.COMPLETED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Impossible d'ajouter un intervenant à un événement terminé.");
+        }
+        
         Doctor doctor = doctorRepository.findById(doctorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
                 
@@ -208,8 +314,11 @@ public class MedicalEventServiceImpl implements MedicalEventService {
         event.setFinalParticipantCount(participantCount);
         eventRepository.save(event);
 
-        // Notify all confirmed participants that the event has started
+        // Mark the flag FIRST (before sending emails) to prevent double-sending on crash
         if (!event.isStartedNotificationSent()) {
+            event.setStartedNotificationSent(true);
+            eventRepository.save(event);
+
             String joinUrl = frontendBaseUrl + "/events/" + event.getId() + "/room";
             participantRepository.findByEvent(event).stream()
                     .filter(p -> p.getStatus() == ParticipantStatus.CONFIRMED)
@@ -222,8 +331,6 @@ public class MedicalEventServiceImpl implements MedicalEventService {
                                 joinUrl
                         );
                     });
-            event.setStartedNotificationSent(true);
-            eventRepository.save(event);
         }
     }
 
@@ -354,7 +461,22 @@ public class MedicalEventServiceImpl implements MedicalEventService {
         ParticipantStatus oldStatus = participant.getStatus();
         participantRepository.delete(participant);
         if (oldStatus == ParticipantStatus.CONFIRMED) {
-            // Only confirmed users leaving trigger an opening in the main list
+            // Promote the first person on the waiting list to CONFIRMED
+            participantRepository.findFirstByEventAndStatusOrderByCreatedAtAsc(event, ParticipantStatus.WAITING_LIST)
+                    .ifPresent(next -> {
+                        next.setStatus(ParticipantStatus.CONFIRMED);
+                        participantRepository.save(next);
+                        // Notify them by email
+                        String userName = next.getUser().getFirstName() + " " + next.getUser().getLastName();
+                        emailService.sendParticipationConfirmedEmail(
+                                next.getUser().getEmail(),
+                                userName,
+                                event.getTitle(),
+                                formatDate(event.getEventDate()),
+                                event.getLocation(),
+                                frontendBaseUrl + "/events/" + event.getId()
+                        );
+                    });
             kafkaTemplate.send(TOPIC, new skylinkers.tn.mediconnectbackend.dto.ParticipationEvent(eventId, user.getId(), "CANCELLED"));
         }
     }
@@ -367,6 +489,11 @@ public class MedicalEventServiceImpl implements MedicalEventService {
         // Only organizer can invite (or adapt if you want any doctor to invite)
         if (!event.getOrganizer().getEmail().equalsIgnoreCase(doctorEmail)) {
             throw new IllegalArgumentException("Unauthorized: Only organizer can invite");
+        }
+
+        // MODIFICATION: Block inviting to COMPLETED events
+        if (event.getStatus() == EventStatus.COMPLETED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Impossible d'inviter des participants à un événement terminé.");
         }
         
         AppUser userToInvite = appUserRepository.findById(userIdToInvite)
@@ -406,7 +533,21 @@ public class MedicalEventServiceImpl implements MedicalEventService {
         }
         
         participant.setStatus(accepted ? ParticipantStatus.CONFIRMED : ParticipantStatus.DECLINED);
-        return mapToParticipantDTO(participantRepository.save(participant));
+        EventParticipant savedParticipant = participantRepository.save(participant);
+
+        // MODIFICATION: Notify host (organizer) of guest response
+        String responseStr = accepted ? "accepté" : "décliné";
+        notificationRepository.save(AppNotification.builder()
+            .user(event.getOrganizer())
+            .eventId(event.getId())
+            .title("Réponse à l'invitation")
+            .message(user.getFirstName() + " " + user.getLastName() + " a " + responseStr + " votre invitation pour \"" + event.getTitle() + "\".")
+            .type("info")
+            .createdAt(LocalDateTime.now())
+            .read(false)
+            .build());
+
+        return mapToParticipantDTO(savedParticipant);
     }
     @Override
     @Transactional(readOnly = true)
@@ -599,17 +740,32 @@ public class MedicalEventServiceImpl implements MedicalEventService {
         
         List<EventSubscription> subs = subscriptionRepository.findByEvent(event);
         for (EventSubscription sub : subs) {
-            AppNotification notif = AppNotification.builder()
-                    .user(sub.getUser())
-                    .eventId(event.getId())
-                    .title("🔴 Direct commencé !")
-                    .message("\"" + event.getTitle() + "\" est en direct maintenant. Cliquez pour rejoindre.")
-                    .type("live_started")
-                    .createdAt(LocalDateTime.now())
-                    .read(false)
-                    .build();
-            notificationRepository.save(notif);
+            sendLiveNotification(sub.getUser(), event);
         }
+
+        // MODIFICATION: Also notify guests (speakers and moderators)
+        if (event.getSpeakers() != null) {
+            for (Doctor speaker : event.getSpeakers()) {
+                sendLiveNotification(speaker, event);
+            }
+        }
+        if (event.getModerators() != null) {
+            for (Doctor moderator : event.getModerators()) {
+                sendLiveNotification(moderator, event);
+            }
+        }
+    }
+
+    private void sendLiveNotification(AppUser user, MedicalEvent event) {
+        notificationRepository.save(AppNotification.builder()
+                .user(user)
+                .eventId(event.getId())
+                .title("🔴 Direct commencé !")
+                .message("\"" + event.getTitle() + "\" est en direct maintenant. Cliquez pour rejoindre.")
+                .type("live_started")
+                .createdAt(LocalDateTime.now())
+                .read(false)
+                .build());
     }
 
     @Override
