@@ -44,6 +44,7 @@ public class SecurityConfig {
                                 "/api/dev/**",
                                 "/api/v1/events/**",
                                 "/api/v1/stream/**",
+                                "/api/v1/users/force-test-email",
                                 "/api/files/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",

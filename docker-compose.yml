@@ -96,33 +96,11 @@ services:
     networks:
       - mediconnect_net
 
-  backend:
-    container_name: MediConnectBackend
-    build: .
+  ml-api:
+    container_name: MediConnectML
+    build: ../ml-api
     ports:
-      - "8082:8082"
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/mediconnect_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-      - SPRING_DATASOURCE_USERNAME=mediconnect_user
-      - SPRING_DATASOURCE_PASSWORD=mediconnect_pass
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - KEYCLOAK_SERVER_URL=http://keycloak:8080
-      - KEYCLOAK_REALM=mediconnect-main
-      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/mediconnect-main
-      - MEDICONNECT_FACE_RECOGNITION_SERVICE_URL=http://host.docker.internal:8000
-      - MAIL_USERNAME=raouftakrouni0@gmail.com
-      - MAIL_PASSWORD=ygcn uenj clwq hhhd
-    volumes:
-      - ./uploads:/app/uploads
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    depends_on:
-      mysql:
-        condition: service_healthy
-      kafka:
-        condition: service_started
-      keycloak:
-        condition: service_started
+      - "8000:8000"
     networks:
       - mediconnect_net
     restart: unless-stopped

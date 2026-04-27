@@ -212,6 +212,18 @@ public class EmailService {
         ));
     }
 
+    // ── NEW: Notify users about events matching their interests ───────────────
+    @Async
+    public void sendInterestMatchEmail(String to, String userName, String eventTitle, String eventDate, String eventLocation, String eventUrl) {
+        sendHtmlEmail(to, "🎯 Recommandation : " + eventTitle, "interest-match.html", Map.of(
+                "userName", userName,
+                "eventTitle", eventTitle,
+                "eventDate", eventDate,
+                "eventLocation", eventLocation == null ? "En ligne" : eventLocation,
+                "eventUrl", eventUrl
+        ));
+    }
+
     private boolean isMailConfigured() {
         if (mailSender instanceof JavaMailSenderImpl impl) {
             String username = impl.getUsername();

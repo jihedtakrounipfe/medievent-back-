@@ -16,39 +16,19 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import skylinkers.tn.mediconnectbackend.repository.UserRepositories.AppUserRepository;
 import skylinkers.tn.mediconnectbackend.entities.AppUser;
+import skylinkers.tn.mediconnectbackend.service.MedicalEventService;
+import skylinkers.tn.mediconnectbackend.dto.MedicalEventDTO;
+import java.time.LocalDateTime;
 import java.util.Set;
 
-/**
- * Cross-entity user search + "who am I" resolution.
- *
- * GET /api/v1/users/search  — search across all user types (patients & doctors)
- * GET /api/v1/users/me      — resolve caller's own full profile from JWT subject
- * GET /api/v1/users/{id}    — fetch any user by internal DB id (admin)
- *
- * Results are lightweight AppUserResponse projections — no PII (no SSN, no embedding vectors).
- * Full profiles are at /patients/{id} and /doctors/{id} respectively.
- *
- * SOLID:
- *   SRP — search + identity resolution only
- *   DIP — depends on IAppUserSearchService interface
- */
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
 public class AppUserController {
     private final IAppUserSearchService searchService;
     private final AppUserRepository userRepository;
+    private final MedicalEventService eventService;
 
-    /**
-     * GET /api/v1/users/search
-     *
-     * All params are optional — combine freely.
-     *
-     * Examples:
-     *   /users/search?name=ali&userType=DOCTOR
-     *   /users/search?specialization=CARDIOLOGY&city=Tunis&isVerified=true
-     *   /users/search?name=benali&isActive=true&page=0&size=10
-     */
     @GetMapping("/search")
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('DOCTOR') or hasRole('PATIENT')")
     public ResponseEntity<Page<AppUserResponse>> search(
@@ -61,7 +41,6 @@ public class AppUserController {
             @RequestParam(required = false) Boolean        isVerified,
             @PageableDefault(size = 20) Pageable           pageable) {
 
-        // Build criteria object — keeps controller thin (no logic here)
         UserSearchCriteria criteria = new UserSearchCriteria();
         criteria.setName(name);
         criteria.setEmail(email);
@@ -76,12 +55,19 @@ public class AppUserController {
 
     @GetMapping("/me")
     public ResponseEntity<AppUserResponse> getMe(@AuthenticationPrincipal Jwt jwt) {
-        if (jwt == null) {
-            return ResponseEntity.status(401).build();
+        if (jwt == null) return ResponseEntity.status(401).build();
+        String keycloakId = jwt.getSubject();
+        String email = jwt.getClaimAsString("email");
+        try {
+            return ResponseEntity.ok(searchService.getByKeycloakId(keycloakId));
+        } catch (Exception e) {
+            AppUser user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found: " + email));
+            user.setKeycloakId(keycloakId);
+            userRepository.save(user);
+            return ResponseEntity.ok(searchService.getByKeycloakId(keycloakId));
         }
-        return ResponseEntity.ok(searchService.getByKeycloakId(jwt.getSubject()));
     }
-
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
@@ -92,10 +78,40 @@ public class AppUserController {
     @PutMapping("/interests")
     public ResponseEntity<Void> updateInterests(@AuthenticationPrincipal Jwt jwt, @RequestBody Set<String> interests) {
         if (jwt == null) return ResponseEntity.status(401).build();
-        AppUser user = userRepository.findByKeycloakId(jwt.getSubject())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        String keycloakId = jwt.getSubject();
+        String email = jwt.getClaimAsString("email");
+        AppUser user = userRepository.findByKeycloakId(keycloakId)
+                .orElseGet(() -> {
+                    AppUser u = userRepository.findByEmail(email)
+                            .orElseThrow(() -> new RuntimeException("User not found: " + email));
+                    u.setKeycloakId(keycloakId);
+                    return u;
+                });
         user.setInterests(interests);
         userRepository.save(user);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/force-test-email")
+    public ResponseEntity<String> forceTestEmail(@RequestParam String email, @RequestParam String tag) {
+        MedicalEventDTO testEvent = MedicalEventDTO.builder()
+            .title("TEST FINAL: Custom Tag Detection")
+            .description("Ceci est une simulation directe pour valider la réception sur votre boîte mail.")
+            .eventDate(LocalDateTime.now().plusDays(2))
+            .location("Virtuel")
+            .targetAudience(skylinkers.tn.mediconnectbackend.entities.enums.EventAudience.PUBLIC)
+            .tags(Set.of(tag))
+            .maxParticipants(100)
+            .build();
+        
+        // Use an existing doctor email from the DB or a default one
+        String doctorEmail = userRepository.findAll().stream()
+            .filter(u -> "DOCTOR".equals(u.getUserType().name()))
+            .map(u -> u.getEmail())
+            .findFirst()
+            .orElse("tjihed9@gmail.com");
+            
+        eventService.createEvent(testEvent, doctorEmail);
+        return ResponseEntity.ok("Emails sent to " + email + " for tag '" + tag + "'!");
     }
 }

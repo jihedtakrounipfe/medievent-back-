@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Nouvelle Conférence Recommandée</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eef2f1; }
+        .header { background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%); padding: 40px 20px; text-align: center; color: #ffffff; }
+        .header h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+        .content { padding: 40px 30px; line-height: 1.6; color: #374151; }
+        .content p { margin-bottom: 20px; font-size: 16px; }
+        .event-card { background-color: #f9fafb; border-radius: 10px; border-left: 5px solid #14b8a6; padding: 25px; margin: 30px 0; }
+        .event-title { font-size: 20px; font-weight: 800; color: #111827; margin-bottom: 10px; display: block; }
+        .event-meta { font-size: 14px; color: #6b7280; margin-bottom: 5px; display: flex; align-items: center; }
+        .button-container { text-align: center; margin-top: 40px; }
+        .button { background-color: #14b8a6; color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; display: inline-block; transition: background-color 0.3s; box-shadow: 0 4px 6px -1px rgba(20, 184, 166, 0.2); }
+        .footer { background-color: #f9fafb; padding: 25px; text-align: center; color: #9ca3af; font-size: 13px; border-top: 1px solid #eef2f1; }
+        .interest-badge { display: inline-block; background-color: #ccfbf1; color: #0f766e; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 700; margin-bottom: 15px; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>MediConnect Recommendations</h1>
+        </div>
+        <div class="content">
+            <p>Bonjour <strong th:text="${userName}">Utilisateur</strong>,</p>
+            <p>Une nouvelle conférence vient d'être publiée et elle correspond parfaitement à vos centres d'intérêt !</p>
+            
+            <div class="event-card">
+                <div class="interest-badge">🎯 Selon vos intérêts</div>
+                <span class="event-title" th:text="${eventTitle}">Titre de la conférence</span>
+                <div class="event-meta">
+                    📅 <span th:text="${eventDate}">Date de l'événement</span>
+                </div>
+                <div class="event-meta">
+                    📍 <span th:text="${eventLocation}">Lieu de l'événement</span>
+                </div>
+            </div>
+
+            <p>Ne manquez pas cette opportunité d'approfondir vos connaissances avec des experts du domaine.</p>
+            
+            <div class="button-container">
+                <a th:href="${eventUrl}" class="button">Voir les détails et s'inscrire</a>
+            </div>
+        </div>
+        <div class="footer">
+            &copy; 2026 MediConnect. Tous droits réservés.<br>
+            Vous recevez cet email car vous avez configuré vos centres d'intérêt sur notre plateforme.
+        </div>
+    </div>
+</body>
+</html>

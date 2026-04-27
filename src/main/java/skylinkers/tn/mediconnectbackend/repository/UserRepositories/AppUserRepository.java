@@ -29,5 +29,8 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> , JpaSpe
     long countByUserType(UserType userType);
 
     long countByUserTypeAndIsActiveTrue(UserType userType);
+    
+    @Query("SELECT DISTINCT u FROM AppUser u JOIN u.interests i WHERE i IN :interests")
+    java.util.List<AppUser> findByInterestsIn(java.util.Set<String> interests);
 }
 

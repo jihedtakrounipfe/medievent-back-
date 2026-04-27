@@ -102,10 +102,10 @@ public class MedicalEventServiceImpl implements MedicalEventService {
                 .build();
         MedicalEvent saved = eventRepository.save(event);
         
-        // Notify co-presenters (speakers)
+        // 1. Notify co-presenters (speakers)
         if (saved.getSpeakers() != null) {
             String organizerName = "Dr. " + doctor.getFirstName() + " " + doctor.getLastName();
-            String dateStr = saved.getEventDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+            String dateStrSpeaker = saved.getEventDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
             String joinUrl = frontendBaseUrl + "/events/" + saved.getId() + "/room";
             
             for (Doctor speaker : saved.getSpeakers()) {
@@ -114,8 +114,43 @@ public class MedicalEventServiceImpl implements MedicalEventService {
                     "Dr. " + speaker.getFirstName() + " " + speaker.getLastName(),
                     organizerName,
                     saved.getTitle(),
-                    dateStr,
+                    dateStrSpeaker,
                     joinUrl
+                );
+            }
+        }
+
+        // 2. NEW: Notify users with matching interests (Personalized Marketing)
+        if (saved.getTags() != null && !saved.getTags().isEmpty()) {
+            java.util.List<AppUser> matchingUsers = appUserRepository.findByInterestsIn(saved.getTags());
+            String eventUrl = frontendBaseUrl + "/events/" + saved.getId();
+            String dateStrInterest = formatDate(saved.getEventDate());
+            
+            log.info("[CREATE-EVENT] Notifying {} users with matching interests for event: {}", matchingUsers.size(), saved.getTitle());
+            
+            for (AppUser matchingUser : matchingUsers) {
+                // Don't notify the organizer themselves
+                if (matchingUser.getId().equals(doctor.getId())) continue;
+                
+                // In-app notification
+                notificationRepository.save(AppNotification.builder()
+                    .user(matchingUser)
+                    .eventId(saved.getId())
+                    .title("Recommandation pour vous")
+                    .message("Une nouvelle conférence sur \"" + saved.getTitle() + "\" pourrait vous intéresser !")
+                    .type("recommendation")
+                    .createdAt(LocalDateTime.now())
+                    .read(false)
+                    .build());
+                
+                // Email notification
+                emailService.sendInterestMatchEmail(
+                    matchingUser.getEmail(),
+                    matchingUser.getFirstName(),
+                    saved.getTitle(),
+                    dateStrInterest,
+                    saved.getLocation(),
+                    eventUrl
                 );
             }
         }
@@ -391,29 +426,74 @@ public class MedicalEventServiceImpl implements MedicalEventService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         java.util.Set<String> userInterests = user.getInterests() != null ? user.getInterests() : new java.util.HashSet<>();
         
-        List<MedicalEvent> allEvents = eventRepository.findAllByStatus(EventStatus.APPROVED);
-        
-        return allEvents.stream()
+        List<MedicalEvent> allEvents = eventRepository.findAllByStatus(EventStatus.APPROVED)
+                .stream()
                 .filter(e -> e.getEventDate() != null && e.getEventDate().isAfter(LocalDateTime.now()))
+                .collect(Collectors.toList());
+
+        // --- ML Microservice Integration ---
+        try {
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            
+            java.util.List<java.util.Map<String, Object>> availableEventsList = new java.util.ArrayList<>();
+            for (MedicalEvent e : allEvents) {
+                java.util.Map<String, Object> evMap = new java.util.HashMap<>();
+                evMap.put("id", e.getId());
+                evMap.put("title", e.getTitle() != null ? e.getTitle() : "");
+                evMap.put("tags", e.getTags() != null ? e.getTags() : new java.util.ArrayList<>());
+                availableEventsList.add(evMap);
+            }
+
+            java.util.Map<String, Object> requestBody = new java.util.HashMap<>();
+            requestBody.put("user_email", userEmail);
+            requestBody.put("user_interests", new java.util.ArrayList<>(userInterests));
+            requestBody.put("available_events", availableEventsList);
+
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+            org.springframework.http.HttpEntity<java.util.Map<String, Object>> entity = new org.springframework.http.HttpEntity<>(requestBody, headers);
+
+            java.util.Map<String, Object> response = restTemplate.postForObject("http://localhost:8000/api/recommend", entity, java.util.Map.class);
+            if (response != null && response.containsKey("recommended_event_ids")) {
+                java.util.List<Integer> recommendedIds = (java.util.List<Integer>) response.get("recommended_event_ids");
+                List<MedicalEventDTO> result = new java.util.ArrayList<>();
+                for (Integer idInt : recommendedIds) {
+                    Long id = idInt.longValue();
+                    allEvents.stream().filter(e -> e.getId().equals(id)).findFirst().ifPresent(e -> result.add(mapToDTO(e)));
+                }
+                if (!result.isEmpty()) {
+                    log.info("Successfully fetched {} recommendations from ML Microservice", result.size());
+                    return result;
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to connect to ML Microservice, falling back to rule-based engine: {}", e.getMessage());
+        }
+
+        // --- Fallback: Rule-based Scoring Engine ---
+        return allEvents.stream()
                 .map(event -> {
-                    int score = 0;
+                    double score = 0;
                     if (event.getTags() != null) {
                         for (String tag : event.getTags()) {
-                            if (userInterests.contains(tag)) score += 10;
+                            if (userInterests.contains(tag)) score += 20.0;
                         }
                     }
                     if (user instanceof Doctor doc) {
                         if (doc.getSpecialization() != null && doc.getSpecialization().equals(event.getSpecialization())) {
-                            score += 15;
+                            score += 30.0; // Boost by specialization
                         }
                     } else if (user instanceof Patient pat) {
                         if (event.getTargetAudience() == EventAudience.PUBLIC) {
-                            score += 5;
+                            score += 10.0;
                         }
                     }
-                    return new java.util.AbstractMap.SimpleEntry<>(event, score);
+                    
+                    // Discovery Factor: ±5% randomness to make the list feel fresh
+                    double discoveryFactor = 0.95 + (Math.random() * 0.1);
+                    return new java.util.AbstractMap.SimpleEntry<>(event, score * discoveryFactor);
                 })
-                .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue())) // Descending
+                .sorted((a, b) -> Double.compare(b.getValue(), a.getValue())) // Descending
                 .map(entry -> mapToDTO(entry.getKey()))
                 .collect(Collectors.toList());
     }
