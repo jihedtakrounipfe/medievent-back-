@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Subscription Confirmation</title>
+</head>
+<body style="margin:0; padding:0; background:#f3f6fb; font-family:Arial, Helvetica, sans-serif; color:#1f2937;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f3f6fb; padding:24px 12px;">
+    <tr>
+        <td align="center">
+            <table role="presentation" width="640" cellspacing="0" cellpadding="0" style="max-width:640px; width:100%; background:#ffffff; border:1px solid #e5e7eb; border-radius:10px;">
+                <tr>
+                    <td style="padding:24px 24px 8px 24px;">
+                        <img src="cid:app-logo" alt="MediConnect" style="max-width:140px; height:auto; display:block; margin:0 0 12px 0;" />
+                        <h1 style="margin:0; font-size:24px; line-height:1.3; color:#111827;">Subscription Confirmed</h1>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:0 24px 16px 24px;">
+                        <p style="margin:0; font-size:15px; line-height:1.6; color:#4b5563;">
+                            Thank you for choosing MediConnect. Your subscription is now active.
+                        </p>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="padding:0 24px 20px 24px;">
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+                            <tr>
+                                <td style="padding:10px 0; border-top:1px solid #eef2f7; width:45%; font-weight:700; color:#111827;">Subscription ID</td>
+                                <td style="padding:10px 0; border-top:1px solid #eef2f7; color:#374151;" th:text="${subscriptionId}">sub-id</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:10px 0; border-top:1px solid #eef2f7; font-weight:700; color:#111827;">Plan</td>
+                                <td style="padding:10px 0; border-top:1px solid #eef2f7; color:#374151;" th:text="${planName}">Basic Plan</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:10px 0; border-top:1px solid #eef2f7; font-weight:700; color:#111827;">Amount</td>
+                                <td style="padding:10px 0; border-top:1px solid #eef2f7; color:#374151;" th:text="${amount}">0.00 TND</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:10px 0; border-top:1px solid #eef2f7; font-weight:700; color:#111827;">Period</td>
+                                <td style="padding:10px 0; border-top:1px solid #eef2f7; color:#374151;" th:text="${period}">2026-03-26 - 2026-04-26</td>
+                            </tr>
+                            <tr th:if="${invoiceId != null}">
+                                <td style="padding:10px 0; border-top:1px solid #eef2f7; font-weight:700; color:#111827;">Invoice ID</td>
+                                <td style="padding:10px 0; border-top:1px solid #eef2f7; color:#374151;" th:text="${invoiceId}">inv-id</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="padding:0 24px 24px 24px;">
+                        <p style="margin:0; font-size:13px; line-height:1.6; color:#6b7280;">
+                            Need help? Contact
+                            <span th:text="${supportEmail}">support@mediconnect.tn</span>
+                        </p>
+                    </td>
+                </tr>
+            </table>
+
+            <table role="presentation" width="640" cellspacing="0" cellpadding="0" style="max-width:640px; width:100%; margin-top:12px;">
+                <tr>
+                    <td align="center" style="font-size:12px; color:#9ca3af; padding:8px 0;">
+                        MediConnect
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

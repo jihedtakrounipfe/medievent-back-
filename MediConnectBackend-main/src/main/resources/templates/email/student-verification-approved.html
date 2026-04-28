@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { margin: 0; padding: 0; background: #f3fbf7; font-family: Arial, sans-serif; color: #1f2937; }
+        .wrap { max-width: 680px; margin: 24px auto; background: #ffffff; border: 1px solid #d9f2e7; border-radius: 12px; overflow: hidden; }
+        .head { padding: 28px; background: linear-gradient(135deg, #0f766e, #16a34a); color: #fff; }
+        .body { padding: 24px 28px; line-height: 1.7; }
+        .ok { margin-top: 14px; padding: 14px; border-radius: 10px; background: #dcfce7; border: 1px solid #86efac; }
+        .foot { padding: 18px 28px 28px; font-size: 12px; color: #64748b; }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="head">
+        <h2 style="margin:0;">Student Verification Approved</h2>
+    </div>
+    <div class="body">
+        <p>Hello <strong th:text="${fullName}">Student</strong>,</p>
+        <p>Your student verification has been approved.</p>
+        <div class="ok">
+            You can now continue to checkout and complete payment for the STUDENT plan.
+        </div>
+    </div>
+    <div class="foot">MediConnect</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .email-wrapper { max-width: 700px; margin: 0 auto; }
+        .container { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        
+        .header {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            text-align: center;
+            padding: 80px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            top: -100px;
+            right: -100px;
+        }
+        
+        .header::after {
+            content: '';
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+            bottom: -50px;
+            left: -50px;
+        }
+        
+        .logo { max-width: 140px; height: auto; margin-bottom: 20px; position: relative; z-index: 1; }
+        .icon { 
+            display: inline-block;
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            font-size: 44px;
+            line-height: 80px;
+            margin: 20px 0;
+            position: relative;
+            z-index: 1;
+        }
+        .header h1 { font-size: 42px; font-weight: 700; margin: 20px 0; letter-spacing: -1px; position: relative; z-index: 1; }
+        .header p { font-size: 18px; opacity: 0.95; position: relative; z-index: 1; }
+        
+        .content { padding: 50px 40px; }
+        .content p { font-size: 16px; line-height: 1.8; color: #555; margin-bottom: 20px; }
+        .content strong { color: #8b5cf6; font-weight: 600; }
+        
+        .cancellation-box {
+            background: linear-gradient(135deg, #f3e8ff 0%, #ede9fe 100%);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            border-left: 5px solid #8b5cf6;
+        }
+        
+        .feedback-box {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+            border: 2px dashed #cbd5e1;
+        }
+        
+        .feedback-box h3 { color: #8b5cf6; font-size: 16px; margin-bottom: 10px; }
+        .feedback-box p { font-size: 14px; color: #666; }
+        
+        .cta-section { text-align: center; margin: 30px 0; }
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            padding: 16px 45px;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 10px 25px rgba(139, 92, 246, 0.3);
+        }
+        
+        .footer {
+            background: #f8fafc;
+            padding: 40px;
+            text-align: center;
+            color: #999;
+            font-size: 13px;
+            line-height: 1.8;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .footer a { color: #8b5cf6; text-decoration: none; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="container">
+            <div class="header">
+                <img src="cid:app-logo" alt="MediConnect" class="logo">
+                <div class="icon">👋</div>
+                <h1>We'll Miss You</h1>
+                <p>Your subscription has been cancelled</p>
+            </div>
+            
+            <div class="content">
+                <p>Hello <strong th:text="${fullName}"></strong>,</p>
+                
+                <p>We've successfully processed your subscription cancellation. Thank you for being part of the MediConnect community - it's been great having you with us!</p>
+                
+                <div class="cancellation-box">
+                    <strong>Subscription Details:</strong><br><br>
+                    <span style="color: #555;">Plan Cancelled:</span> <span style="color: #8b5cf6; font-weight: 700;" th:text="${planName}"></span><br>
+                    <span style="color: #555;">Effective Immediately</span>
+                </div>
+                
+                <p>Your access to premium features has ended. However, you can always resubscribe anytime and pick up where you left off.</p>
+                
+                <div class="feedback-box">
+                    <h3>We'd Love Your Feedback!</h3>
+                    <p>Your input helps us improve. If there's anything we could have done better, please let us know. We're constantly working to enhance MediConnect for users like you.</p>
+                </div>
+                
+                <div class="cta-section">
+                    <a href="https://your-domain.com/resubscribe" class="btn">Resubscribe Anytime</a>
+                </div>
+                
+                <p>If you have any questions or need further assistance, our support team is here for you.</p>
+            </div>
+            
+            <div class="footer">
+                <p><strong>MediConnect Team</strong></p>
+                <p>© 2026 MediConnect. All rights reserved.</p>
+                <p><a href="#">Resubscribe</a> | <a href="#">Contact Us</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

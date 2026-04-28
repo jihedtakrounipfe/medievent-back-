@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .email-wrapper { max-width: 700px; margin: 0 auto; }
+        .container { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        
+        .header {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            text-align: center;
+            padding: 80px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            top: -100px;
+            right: -100px;
+        }
+        
+        .header::after {
+            content: '';
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+            bottom: -50px;
+            left: -50px;
+        }
+        
+        .logo { max-width: 140px; height: auto; margin-bottom: 20px; position: relative; z-index: 1; }
+        .icon { 
+            display: inline-block;
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            font-size: 44px;
+            line-height: 80px;
+            margin: 20px 0;
+            position: relative;
+            z-index: 1;
+        }
+        .header h1 { font-size: 40px; font-weight: 700; margin: 20px 0; letter-spacing: -1px; position: relative; z-index: 1; }
+        .header p { font-size: 18px; opacity: 0.95; position: relative; z-index: 1; }
+        
+        .content { padding: 50px 40px; }
+        .content p { font-size: 16px; line-height: 1.8; color: #555; margin-bottom: 20px; }
+        .content strong { color: #d97706; font-weight: 600; }
+        
+        .deactivation-box {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            border-left: 5px solid #f59e0b;
+        }
+        
+        .deactivation-box h3 { color: #d97706; font-size: 18px; margin-bottom: 15px; font-weight: 600; }
+        .deactivation-box p { font-size: 15px; color: #333; line-height: 1.7; }
+        
+        .credit-highlight {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        
+        .credit-highlight h3 { font-size: 16px; margin-bottom: 10px; opacity: 0.9; }
+        .credit-amount { font-size: 48px; font-weight: 700; margin: 10px 0; }
+        .credit-expiry { font-size: 14px; opacity: 0.85; }
+        
+        .next-steps {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+            border-left: 4px solid #d97706;
+        }
+        
+        .next-steps h3 { color: #d97706; font-size: 16px; margin-bottom: 15px; font-weight: 600; }
+        .next-steps ol { margin-left: 20px; color: #555; line-height: 1.8; }
+        .next-steps li { margin-bottom: 10px; font-size: 15px; }
+        
+        .cta-section { text-align: center; margin: 30px 0; }
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            padding: 16px 45px;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 10px 25px rgba(245, 158, 11, 0.3);
+        }
+        
+        .footer {
+            background: linear-gradient(135deg, #f8f9fa 0%, #f0f0f0 100%);
+            color: #666;
+            text-align: center;
+            padding: 30px;
+            font-size: 13px;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .footer a { color: #f59e0b; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="container">
+            <div class="header">
+                <img src="cid:app-logo" alt="MediConnect" class="logo">
+                <div class="icon">⚠️</div>
+                <h1>Plan Discontinued</h1>
+                <p>Your subscription requires attention</p>
+            </div>
+            
+            <div class="content">
+                <p>Dear <strong th:text="${fullName}">Valued Customer</strong>,</p>
+                
+                <p>We wanted to inform you that the <strong th:text="${planName}">plan name</strong> has been discontinued and removed from our system on <strong th:text="${cancellationDate}">today</strong>.</p>
+                
+                <div class="deactivation-box">
+                    <h3>What This Means for You</h3>
+                    <p>Your active subscription to the <strong th:text="${planName}">plan name</strong> has been automatically cancelled effective immediately. However, we've calculated a credit for the remaining unused days of your subscription, and we want to make sure you're taken care of.</p>
+                </div>
+                
+                <div class="credit-highlight">
+                    <h3>Your Account Credit</h3>
+                    <div class="credit-amount" th:text="${creditAmount} + ' TND'">X.XX TND</div>
+                    <p>This credit has been added to your account</p>
+                    <div class="credit-expiry">Expires on <span th:text="${creditExpiresAt}">date</span></div>
+                </div>
+                
+                <div class="next-steps">
+                    <h3>What You Can Do Now</h3>
+                    <ol>
+                        <li><strong>Keep the credit:</strong> Your credit will be automatically applied when you subscribe to any new plan</li>
+                        <li><strong>Browse new plans:</strong> Visit your account to explore our updated plan offerings</li>
+                        <li><strong>Maintain access:</strong> You'll keep access to your current features until midnight today</li>
+                        <li><strong>Choose your next plan:</strong> When ready, select a new plan and your credit will be deducted automatically</li>
+                    </ol>
+                </div>
+                
+                <p>We understand this change may be unexpected. If you have any questions about your credit, your account, or our current plans, please don't hesitate to reach out to our support team.</p>
+                
+                <div class="cta-section">
+                    <a href="https://mediconnect.app/plans" class="btn">Browse Available Plans</a>
+                </div>
+                
+                <p>We appreciate your continued support and hope to see you on a new plan soon!</p>
+                
+                <p>Best regards,<br><strong>The MediConnect Team</strong></p>
+            </div>
+            
+            <div class="footer">
+                <p>&copy; 2026 MediConnect. All rights reserved.</p>
+                <p>Have questions? <a href="mailto:support@mediconnect.app">Contact our support team</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

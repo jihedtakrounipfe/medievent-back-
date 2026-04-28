@@ -1,0 +1,52 @@
+spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+    default-encoding: UTF-8
+
+mediconnect:
+  upload:
+    image-path: C:\Users\amine\Desktop\MediConnect\Images
+  mail:
+    from-name: MediConnect
+    from-address: ${MAIL_USERNAME:}
+    enabled: true
+  face-recognition:
+    enabled: ${FACE_RECOGNITION_ENABLED:true}
+    service-url: ${FACE_RECOGNITION_URL:http://localhost:8000}
+    enroll-path: ${FACE_RECOGNITION_ENROLL_PATH:/api/face/enroll}
+    verify-path: ${FACE_RECOGNITION_VERIFY_PATH:/api/face/verify}
+    delete-path: ${FACE_RECOGNITION_DELETE_PATH:/api/face/template}
+    connect-timeout-ms: ${FACE_RECOGNITION_CONNECT_TIMEOUT_MS:5000}
+    read-timeout-ms: ${FACE_RECOGNITION_READ_TIMEOUT_MS:10000}
+
+keycloak:
+  server-url: http://localhost:9090
+  realm: mediconnect-main
+  client-id: angular-spa
+  admin:
+    realm: master
+    client-id: admin-cli
+    username: ${KEYCLOAK_ADMIN_USERNAME:admin}
+    password: ${KEYCLOAK_ADMIN_PASSWORD:admin}
+
+google:
+  recaptcha:
+    secret: ${RECAPTCHA_SECRET_KEY:6LdUiLMsAAAAAHTPsQosh4TGTFVfiIp_JyTqmy5r}
+    verify-url: https://www.google.com/recaptcha/api/siteverify
+    enabled: true

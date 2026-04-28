@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .email-wrapper { max-width: 700px; margin: 0 auto; }
+        .container { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        
+        .header {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: white;
+            text-align: center;
+            padding: 80px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            top: -100px;
+            right: -100px;
+        }
+        
+        .header::after {
+            content: '';
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+            bottom: -50px;
+            left: -50px;
+        }
+        
+        .logo { max-width: 140px; height: auto; margin-bottom: 20px; position: relative; z-index: 1; }
+        .icon { 
+            display: inline-block;
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            font-size: 44px;
+            line-height: 80px;
+            margin: 20px 0;
+            position: relative;
+            z-index: 1;
+        }
+        .header h1 { font-size: 42px; font-weight: 700; margin: 20px 0; letter-spacing: -1px; position: relative; z-index: 1; }
+        .header p { font-size: 18px; opacity: 0.95; position: relative; z-index: 1; }
+        
+        .content { padding: 50px 40px; }
+        .content p { font-size: 16px; line-height: 1.8; color: #555; margin-bottom: 20px; }
+        .content strong { color: #f97316; font-weight: 600; }
+        
+        .error-warning {
+            background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            border-left: 5px solid #f97316;
+        }
+        
+        .steps-box {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        
+        .steps-box h3 { color: #ea580c; font-size: 16px; margin-bottom: 15px; }
+        .steps-box ol { margin-left: 20px; }
+        .steps-box li { padding: 8px 0; color: #555; font-size: 15px; }
+        
+        .cta-section { text-align: center; margin: 30px 0; }
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: white;
+            padding: 16px 45px;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3);
+            margin: 0 10px;
+        }
+        
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #333;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .footer {
+            background: #f8fafc;
+            padding: 40px;
+            text-align: center;
+            color: #999;
+            font-size: 13px;
+            line-height: 1.8;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .footer a { color: #f97316; text-decoration: none; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="container">
+            <div class="header">
+                <img src="cid:app-logo" alt="MediConnect" class="logo">
+                <div class="icon">⚠️</div>
+                <h1>Payment Unsuccessful</h1>
+                <p>We couldn't process your payment</p>
+            </div>
+            
+            <div class="content">
+                <p>Hello <strong th:text="${fullName}"></strong>,</p>
+                
+                <p>We attempted to process your payment but encountered an issue. Please don't worry - this is temporary and can be resolved quickly.</p>
+                
+                <div class="error-warning">
+                    <strong>What Happened:</strong><br>
+                    Your payment could not be processed. This might be due to expired card details, insufficient funds, or your bank declining the transaction.
+                </div>
+                
+                <div class="steps-box">
+                    <h3>Here's What You Can Do:</h3>
+                    <ol>
+                        <li>Check if your card details are correct and current</li>
+                        <li>Ensure your account has sufficient funds</li>
+                        <li>Try using a different payment method</li>
+                        <li>Contact your bank if you see repeated failures</li>
+                    </ol>
+                </div>
+                
+                <div class="cta-section">
+                    <a href="https://your-domain.com/billing/retry" class="btn">Try Again</a>
+                    <a href="https://your-domain.com/support" class="btn btn-secondary">Need Help?</a>
+                </div>
+                
+                <p>Your subscription remains paused until payment is successful. Act now to avoid service interruption.</p>
+            </div>
+            
+            <div class="footer">
+                <p><strong>MediConnect Support Team</strong></p>
+                <p>© 2026 MediConnect. All rights reserved.</p>
+                <p><a href="#">FAQ</a> | <a href="mailto:support@mediconnect.tn">Email Support</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
